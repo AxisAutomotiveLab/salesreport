@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>FR Auto Group — Sales Dashboard 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{
+  --bg:#0b0d12;--s1:#13161f;--s2:#1a1e2a;--s3:#222736;
+  --b1:rgba(255,255,255,.06);--b2:rgba(255,255,255,.12);--b3:rgba(255,255,255,.2);
+  --t1:#f1f3f9;--t2:#8892a4;--t3:#4a5468;
+  --chr:#4e9de0;--masj:#2ecc8f;--masg:#f5923a;--nis:#c97ee8;--toy:#f5c842;
+  --acc:#4e9de0;--red:#e05c5c;--grn:#2ecc8f;--amb:#f5c842;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);font-size:13px;line-height:1.5;min-height:100vh;}
+.mono{font-family:'JetBrains Mono',monospace;}
+
+/* ─ HEADER ─ */
+.hdr{background:var(--s1);border-bottom:1px solid var(--b1);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;gap:16px;}
+.hdr-brand{display:flex;align-items:center;gap:10px;}
+.hdr-logo{width:32px;height:32px;background:linear-gradient(135deg,var(--chr),#6b8ff0);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;}
+.hdr-title{font-size:15px;font-weight:600;}
+.hdr-sub{font-size:11px;color:var(--t2);margin-top:1px;}
+.hdr-period{font-size:11px;color:var(--t3);font-family:'JetBrains Mono',monospace;}
+
+/* ─ FILTERS ─ */
+.fbar{background:var(--s1);border-bottom:1px solid var(--b1);padding:12px 28px;display:flex;gap:20px;flex-wrap:wrap;align-items:flex-end;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+.flbl{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;}
+.pr{display:flex;gap:5px;flex-wrap:wrap;}
+.pill{font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid var(--b2);background:transparent;color:var(--t2);cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;}
+.pill:hover{border-color:var(--b3);color:var(--t1);}
+.pill.on{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:500;}
+.pill[data-d="Chrysler"].on{background:var(--chr);border-color:var(--chr);}
+.pill[data-d="Mas SJ"].on{background:var(--masj);border-color:var(--masj);color:#0a1a12;}
+.pill[data-d="Mas Guaynabo"].on{background:var(--masg);border-color:var(--masg);color:#1a0900;}
+.pill[data-d="Nissan"].on{background:var(--nis);border-color:var(--nis);color:#1a0028;}
+.pill[data-d="Toyota"].on{background:var(--toy);border-color:var(--toy);color:#1a1300;}
+
+/* ─ LAYOUT ─ */
+.main{padding:20px 28px;display:flex;flex-direction:column;gap:16px;}
+
+/* ─ KPIs ─ */
+.krow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+.kc{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:14px 16px;}
+.kc.hl{border-color:rgba(78,157,224,.25);background:rgba(78,157,224,.06);}
+.klbl{font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;}
+.kval{font-size:20px;font-weight:700;color:var(--t1);font-family:'JetBrains Mono',monospace;line-height:1.2;}
+.ksub{font-size:10px;color:var(--t3);margin-top:3px;}
+
+/* ─ CARDS ─ */
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:18px 20px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.ct{font-size:13px;font-weight:600;color:var(--t1);margin-bottom:2px;}
+.cs{font-size:11px;color:var(--t2);}
+.ch{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:8px;}
+
+/* ─ LEGEND ─ */
+.leg{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+.li{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--t2);}
+.ld{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+
+/* ─ TABS ─ */
+.tbrow{display:flex;gap:3px;}
+.tb{font-size:10px;padding:3px 9px;border-radius:5px;border:1px solid transparent;background:transparent;color:var(--t2);cursor:pointer;transition:all .12s;font-family:'Inter',sans-serif;}
+.tb:hover{color:var(--t1);}
+.tb.on{background:var(--s2);border-color:var(--b2);color:var(--t1);}
+
+/* ─ CHART WRAP ─ */
+.cw{position:relative;}
+
+/* ─ TABLE ─ */
+.tscroll{max-height:320px;overflow-y:auto;}
+.tscroll::-webkit-scrollbar{width:3px;}
+.tscroll::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px;}
+table{width:100%;border-collapse:collapse;}
+th{font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;padding:5px 8px 7px;border-bottom:1px solid var(--b1);text-align:left;white-space:nowrap;}
+td{font-size:11px;padding:7px 8px;border-bottom:1px solid var(--b1);color:var(--t1);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,.02);}
+td.r{text-align:right;}
+td.mono{font-family:'JetBrains Mono',monospace;font-size:11px;}
+.badge{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;font-size:9px;font-weight:700;background:var(--s2);color:var(--t2);font-family:'JetBrains Mono',monospace;}
+.badge.g{background:rgba(251,191,36,.15);color:var(--amb);}
+.badge.s{background:rgba(148,163,184,.15);color:#94a3b8;}
+.badge.b{background:rgba(249,115,22,.15);color:#f97316;}
+
+/* ─ DEALER CHIP ─ */
+.dc{display:inline-block;font-size:9px;font-weight:600;padding:2px 6px;border-radius:4px;}
+.dc.Chrysler{background:rgba(78,157,224,.15);color:var(--chr);}
+.dc.MasSJ,.dc\.MasSJ{background:rgba(46,204,143,.15);color:var(--masj);}
+.dc.MasGuaynabo{background:rgba(245,146,58,.15);color:var(--masg);}
+
+/* ─ BAR STRIP ─ */
+.bstrip{display:flex;flex-direction:column;gap:7px;}
+.brow{display:flex;flex-direction:column;gap:2px;}
+.bmeta{display:flex;justify-content:space-between;font-size:10px;color:var(--t2);}
+.btrack{background:var(--s2);border-radius:3px;height:5px;overflow:hidden;}
+.bfill{height:100%;border-radius:3px;transition:width .4s ease;}
+
+/* ─ NOTE CARDS ─ */
+.ncard{border-left:3px solid;padding:10px 12px;border-radius:0 8px 8px 0;background:var(--s2);}
+.nhead{font-size:11px;font-weight:600;color:var(--t1);margin-bottom:3px;}
+.nbody{font-size:11px;color:var(--t2);line-height:1.5;}
+
+/* ─ NU BAR ─ */
+.nubar{display:flex;height:7px;border-radius:4px;overflow:hidden;gap:1px;}
+
+/* ─ STATUS MINI ─ */
+.smini{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center;}
+.sminibox{border-radius:6px;padding:6px 4px;}
+.sminibox .v{font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.sminibox .l{font-size:9px;color:var(--t3);margin-top:1px;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-logo">FR</div>
+    <div>
+      <div class="hdr-title">FR Auto Group — Sales Dashboard</div>
+      <div class="hdr-sub">Chrysler · Mas SJ · Mas Guaynabo · Nissan · Toyota</div>
+    </div>
+  </div>
+  <div class="hdr-period">Ene – May 2026 · Data limpia</div>
+</div>
+
+<div class="fbar">
+  <div class="fg">
+    <div class="flbl">Mes</div>
+    <div class="pr" id="mp">
+      <button class="pill on" data-m="all" onclick="F('m','all',this)">Todos</button>
+      <button class="pill" data-m="2026-01" onclick="F('m','2026-01',this)">Ene</button>
+      <button class="pill" data-m="2026-02" onclick="F('m','2026-02',this)">Feb</button>
+      <button class="pill" data-m="2026-03" onclick="F('m','2026-03',this)">Mar</button>
+      <button class="pill" data-m="2026-04" onclick="F('m','2026-04',this)">Abr</button>
+      <button class="pill" data-m="2026-05" onclick="F('m','2026-05',this)">May</button>
+    </div>
+  </div>
+  <div class="fg">
+    <div class="flbl">Dealer</div>
+    <div class="pr" id="dp">
+      <button class="pill on" data-d="all" onclick="F('d','all',this)">Todos</button>
+      <button class="pill" data-d="Chrysler" onclick="F('d','Chrysler',this)">Chrysler</button>
+      <button class="pill" data-d="Mas SJ" onclick="F('d','Mas SJ',this)">Mas SJ</button>
+      <button class="pill" data-d="Mas Guaynabo" onclick="F('d','Mas Guaynabo',this)">Mas Guaynabo</button>
+      <button class="pill" data-d="Nissan" onclick="F('d','Nissan',this)">Nissan</button>
+      <button class="pill" data-d="Toyota" onclick="F('d','Toyota',this)">Toyota</button>
+    </div>
+  </div>
+  <div class="fg">
+    <div class="flbl">Lead Type</div>
+    <div class="pr" id="ltp">
+      <button class="pill on" data-lt="all" onclick="F('lt','all',this)">Todos</button>
+      <button class="pill" data-lt="Outbound" onclick="F('lt','Outbound',this)">Outbound</button>
+      <button class="pill" data-lt="Inbound" onclick="F('lt','Inbound',this)">Inbound</button>
+      <button class="pill" data-lt="Showroom" onclick="F('lt','Showroom',this)">Showroom</button>
+      <button class="pill" data-lt="Internet" onclick="F('lt','Internet',this)">Internet</button>
+      <button class="pill" data-lt="Service" onclick="F('lt','Service',this)">Service</button>
+      <button class="pill" data-lt="No Lead Type" onclick="F('lt','No Lead Type',this)">Sin tipo</button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="krow" id="kpis"></div>
+
+  <!-- ROW 1: Ventas por mes + Lead Type ventas -->
+  <div class="g2">
+    <div class="card">
+      <div class="ch">
+        <div><div class="ct">Ventas por mes</div><div class="cs">Cantidad de ventas cerradas</div></div>
+      </div>
+      <div class="leg" id="lv"></div>
+      <div class="cw" style="height:210px"><canvas id="cV" role="img" aria-label="Ventas por mes"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ch">
+        <div><div class="ct">Ventas por Lead Type</div><div class="cs">Cantidad de ventas cerradas por tipo de lead</div></div>
+        <div class="tbrow">
+          <button class="tb on" onclick="setLT('sales',this)">Ventas</button>
+          <button class="tb" onclick="setLT('amount',this)">Sale Amount $</button>
+          <button class="tb" onclick="setLT('gross',this)">Gross $</button>
+        </div>
+      </div>
+      <div class="leg" id="llt"></div>
+      <div style="display:grid;grid-template-columns:160px 1fr;gap:12px;align-items:center">
+        <div style="position:relative;height:180px">
+          <canvas id="cLT" role="img" aria-label="Lead type donut"></canvas>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
+            <div style="font-size:17px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--t1)" id="ltcv">-</div>
+            <div style="font-size:9px;color:var(--t2)" id="ltcl">ventas</div>
+          </div>
+        </div>
+        <div class="bstrip" id="ltbars" style="overflow-y:auto;max-height:180px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 2: Ventas por Lead Source + Sale Amount por Lead Type -->
+  <div class="g2">
+    <div class="card">
+      <div class="ch">
+        <div><div class="ct">Ventas por Lead Source — ranking</div><div class="cs">Cantidad de ventas por fuente, mayor a menor</div></div>
+        <div class="tbrow">
+          <button class="tb on" onclick="setLS('sales',this)">Ventas</button>
+          <button class="tb" onclick="setLS('amount',this)">Sale Amount</button>
+          <button class="tb" onclick="setLS('gross',this)">Gross $</button>
+        </div>
+      </div>
+      <div id="lswrap" class="cw"><canvas id="cLS" role="img" aria-label="Lead source ranking"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ch">
+        <div><div class="ct" data-fr-only="fr-only-sa-lt">Sale Amount por Lead Type</div><div class="cs">Total facturado por tipo de lead (dealers FR)</div></div>
+      </div>
+      <div class="leg" id="lsa"></div>
+      <div class="cw" style="height:240px"><canvas id="cSA" role="img" aria-label="Sale amount por lead type"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ROW 3: Sale Amount por Lead Source + Gross por Lead Type mensual -->
+  <div class="g2">
+    <div class="card">
+      <div class="ch">
+        <div><div class="ct" data-fr-only="fr-only-sa-ls">Sale Amount por Lead Source</div><div class="cs">Top 15 fuentes por monto total facturado (FR)</div></div>
+      </div>
+      <div id="saswrap" class="cw"><canvas id="cSAS" role="img" aria-label="Sale amount por lead source"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ch">
+        <div><div class="ct">Tendencia ventas por Lead Type</div><div class="cs">Evolución mensual de ventas por tipo de lead</div></div>
+      </div>
+      <div class="leg" id="ltend"></div>
+      <div class="cw" style="height:240px"><canvas id="cLTT" role="img" aria-label="Lead type tendencia"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ROW 4: Gross mensual + Avg gross/deal -->
+  <div class="g2">
+    <div class="card">
+      <div class="ch">
+        <div><div class="ct" data-fr-only="fr-only-gross">Gross total por mes — FR</div><div class="cs">Front End + F&I combinado</div></div>
+        <div class="tbrow">
+          <button class="tb on" onclick="setGM('line',this)">Línea</button>
+          <button class="tb" onclick="setGM('bar',this)">Barra</button>
+        </div>
+      </div>
+      <div class="leg" id="lgross"></div>
+      <div class="cw" style="height:200px"><canvas id="cG" role="img" aria-label="Gross mensual"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ch">
+        <div><div class="ct" data-fr-only="fr-only-avg">Avg Gross / deal por mes — FR</div><div class="cs">Gross promedio por transacción cerrada</div></div>
+      </div>
+      <div class="leg" id="lavg"></div>
+      <div class="cw" style="height:200px"><canvas id="cAVG" role="img" aria-label="Avg gross mensual"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ROW 4b: Avg días prospect→deal by Lead Type + Lead Source -->
+  <div class="g2">
+    <div class="card">
+      <div class="ch">
+        <div><div class="ct">Promedio días prospect→deal por Lead Type</div><div class="cs">Días promedio entre creación del prospect y cierre del deal</div></div>
+      </div>
+      <div id="days-lt-bars" class="bstrip" style="margin-top:4px"></div>
+    </div>
+    <div class="card">
+      <div class="ch">
+        <div><div class="ct">Promedio días prospect→deal por Lead Source</div><div class="cs">Top 12 fuentes por días promedio (mín. 5 deals)</div></div>
+      </div>
+      <div id="days-ls-bars" class="bstrip" style="margin-top:4px"></div>
+    </div>
+  </div>
+
+  <!-- ROW 5: FI breakdown + Nuevo/Usado + Status NT -->
+  <div class="g3">
+    <div class="card">
+      <div class="ch"><div><div class="ct" data-fr-only="fr-only-fi">Desglose Gross — FR</div><div class="cs">Front End vs F&I por dealer</div></div></div>
+      <div class="leg" id="lfi"></div>
+      <div class="cw" style="height:180px"><canvas id="cFI" role="img" aria-label="FI breakdown"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ch"><div><div class="ct" data-fr-only="fr-only-nu">Nuevo vs Usado — FR</div><div class="cs">Distribución ventas y Sale Amount</div></div></div>
+      <div id="nubars" style="margin-top:4px"></div>
+    </div>
+    <div class="card">
+      <div class="ch"><div><div class="ct">Status ventas — Nissan &amp; Toyota</div><div class="cs">Sold/Delivered de la base de prospectos</div></div></div>
+      <div id="statusbox" style="display:flex;flex-direction:column;gap:14px;margin-top:4px"></div>
+    </div>
+  </div>
+
+
+  <!-- NT SECTION -->
+  <div id="nt-section" style="display:block">
+    <div class="g2">
+      <div class="card">
+        <div class="ch"><div><div class="ct">Ventas mensuales — todos los dealers</div><div class="cs">Ventas cerradas por mes y dealer</div></div></div>
+        <div class="leg" id="lNTTrend"></div>
+        <div class="cw" style="height:200px"><canvas id="cNTTrend" role="img" aria-label="NT trend"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="ch"><div><div class="ct">Lead Source Category — ventas</div><div class="cs">Distribución de ventas por categoría de canal</div></div></div>
+        <div class="leg" id="lNTLSC"></div>
+        <div class="cw" style="height:200px"><canvas id="cNTLSC" role="img" aria-label="NT LSC"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 6: Top vendedores -->
+  <div class="card">
+    <div class="ch">
+      <div><div class="ct">Top vendedores — 5 dealers</div><div class="cs">Rankings por gross, sale amount o unidades vendidas</div></div>
+      <div class="tbrow">
+        <button class="tb on" onclick="setSP('g',this)">Gross</button>
+        <button class="tb" onclick="setSP('a',this)">Sale Amount</button>
+        <button class="tb" onclick="setSP('s',this)">Ventas</button>
+        <button class="tb" onclick="setSP('avg',this)">Avg/deal</button>
+      </div>
+    </div>
+    <p id="sp-note" style="display:none;padding:8px 0 6px;font-size:11px;color:#8892a4;font-style:italic"></p><div class="tscroll"><table>
+      <thead><tr><th style="text-align:center">#</th><th>Vendedor</th><th style="text-align:center">Dealer</th><th style="text-align:center">Ventas</th><th style="text-align:center">Sale Amount</th><th style="text-align:center">Gross</th><th style="text-align:center">Avg gross</th></tr></thead>
+      <tbody id="spbody"></tbody>
+    </table></div>
+  </div>
+
+  <!-- ROW 7: Recomendaciones -->
+  <div class="card">
+    <div class="ch"><div><div class="ct">Análisis y recomendaciones</div><div class="cs">Insights basados en la data del período Ene–May 2026</div></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px" id="recs"></div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────────
+const D={"monthly":{"2026-01":{"Chrysler":{"total_sales":117,"total_amount":6101495.62,"total_gross":541967.5,"total_fi":128472.59,"total_fe":413494.91,"lt":[{"k":"Inbound","s":37,"a":1836917.0,"g":207423.68},{"k":"Internet","s":16,"a":869505.0,"g":64812.39},{"k":"No Lead Type","s":3,"a":138300.0,"g":12289.89},{"k":"Outbound","s":35,"a":1863009.0,"g":146361.02},{"k":"Service","s":4,"a":210000.0,"g":14557.74},{"k":"Showroom","s":22,"a":1183764.62,"g":96522.78}],"ls":[{"k":"Auto Alert Inbound","s":1,"a":58995.0,"g":9390.25},{"k":"Auto Alert Marquesina","s":2,"a":112593.0,"g":16158.18},{"k":"Auto Alert Outbound","s":1,"a":42991.0,"g":7810.68},{"k":"CHRYSLER FB MESSENGER","s":6,"a":261225.0,"g":22617.66},{"k":"CHRYSLER Lead PR - Facebook Lead","s":1,"a":82995.0,"g":1114.87},{"k":"Clasif Online","s":3,"a":241386.0,"g":20293.77},{"k":"Clasificados Online vendedor","s":2,"a":118486.0,"g":14114.36},{"k":"DS *Drive By/Location","s":1,"a":55700.0,"g":3019.43},{"k":"DS *RevTeam-CompramosTu","s":1,"a":54995.0,"g":5974.6},{"k":"Drive by location","s":2,"a":108491.0,"g":2720.69},{"k":"Facebook","s":16,"a":892814.0,"g":112314.88},{"k":"Instagram","s":1,"a":71395.0,"g":9379.47},{"k":"Internet/Website","s":3,"a":161491.0,"g":12731.77},{"k":"LGG:Chrysler - Text","s":2,"a":158986.0,"g":11312.45},{"k":"LGG:Clasificados Online","s":1,"a":25000.0,"g":-2450.9},{"k":"LGG:Promociones radios y paginas web Marca FCA","s":1,"a":21800.0,"g":5815.52},{"k":"Lead Facebook Chrysler","s":2,"a":140195.0,"g":10333.68},{"k":"Lives Locally","s":12,"a":585952.0,"g":37520.69},{"k":"No Lead Source","s":3,"a":138300.0,"g":12289.89},{"k":"Procura por Vendedor","s":1,"a":36491.0,"g":5437.22},{"k":"Publicidad Vendedor","s":21,"a":918499.62,"g":69481.12},{"k":"Radio","s":1,"a":39991.0,"g":792.25},{"k":"Referido","s":6,"a":379257.0,"g":28863.28},{"k":"Referido Fabricante/Corporativo","s":10,"a":540938.0,"g":41842.75},{"k":"Service Customer","s":5,"a":229995.0,"g":20487.02},{"k":"TEXTO SAKARI","s":1,"a":66322.0,"g":7204.68},{"k":"Whatsapp","s":11,"a":556212.0,"g":55397.24}],"nu":{"N":{"s":74,"a":4746913.0,"g":424601.06},"U":{"s":43,"a":1354582.62,"g":117366.44}},"sp":[{"name":"Gomez, Juan","s":12,"a":589694.0,"g":76902.56},{"name":"Quinones, Brenda L.","s":18,"a":888182.0,"g":72541.51},{"name":"Serrano, Carlos","s":9,"a":610491.0,"g":61695.68},{"name":"Malave, Jose","s":10,"a":549753.0,"g":56023.92},{"name":"Torres, Felix","s":7,"a":298076.0,"g":38165.42}]},"Mas SJ":{"total_sales":30,"total_amount":1288380.88,"total_gross":183383.68,"total_fi":18162.2,"total_fe":165221.48,"lt":[{"k":"Inbound","s":11,"a":657663.0,"g":90333.4},{"k":"Internet","s":1,"a":54500.0,"g":4592.8},{"k":"No Lead Type","s":1,"a":4050.0,"g":2970.0},{"k":"Outbound","s":12,"a":392327.88,"g":56994.53},{"k":"Showroom","s":5,"a":179840.0,"g":28492.95}],"ls":[{"k":"AC+ FB MESSENGER","s":1,"a":54500.0,"g":4592.8},{"k":"Clasif Online","s":3,"a":90198.88,"g":3062.02},{"k":"Facebook","s":5,"a":323558.0,"g":44681.59},{"k":"No Lead Source","s":1,"a":4050.0,"g":2970.0},{"k":"Publicidad Vendedor","s":12,"a":586795.0,"g":82881.96},{"k":"Referido Fabricante/Corporativo","s":2,"a":56990.0,"g":9377.21},{"k":"Whatsapp","s":6,"a":172289.0,"g":35818.1}],"nu":{"U":{"s":30,"a":1288380.88,"g":183383.68}},"sp":[{"name":"Santiago Rodriguez, Melvin","s":6,"a":232230.0,"g":36053.41},{"name":"Garcia Serrano, Angelie","s":6,"a":193194.0,"g":34867.26},{"name":"Sosa, Andres","s":4,"a":227485.0,"g":30346.69},{"name":"Hidalgo Negron, Tylee","s":3,"a":217490.0,"g":27197.17},{"name":"Mangual, Emmanuel","s":3,"a":110985.0,"g":12264.54}]},"Mas Guaynabo":{"total_sales":32,"total_amount":1521262.58,"total_gross":188682.68,"total_fi":22039.6,"total_fe":166643.08,"lt":[{"k":"Inbound","s":17,"a":940409.58,"g":121332.0},{"k":"Internet","s":2,"a":74076.0,"g":13124.89},{"k":"No Lead Type","s":5,"a":59996.0,"g":6328.69},{"k":"Outbound","s":4,"a":213301.0,"g":26607.5},{"k":"Showroom","s":4,"a":233480.0,"g":21289.6}],"ls":[{"k":"Clasif Online","s":1,"a":34000.0,"g":3613.95},{"k":"FB MESSENGER AC+ GUAYNABO","s":2,"a":74076.0,"g":13124.89},{"k":"Facebook","s":10,"a":492820.0,"g":68005.34},{"k":"No Lead Source","s":9,"a":323115.0,"g":34324.5},{"k":"Publicidad Vendedor","s":10,"a":597251.58,"g":69614.0}],"nu":{"U":{"s":32,"a":1521262.58,"g":188682.68}},"sp":[{"name":"Rivas Suarez, Miguel","s":7,"a":354700.0,"g":50739.45},{"name":"Figueroa Hernandez, Nelson","s":7,"a":328186.58,"g":46004.19},{"name":"Gilbes Rivera, Alina","s":3,"a":202916.0,"g":32413.19},{"name":"Figueroa Otero, Kris","s":5,"a":255480.0,"g":21661.67},{"name":"Gonzalez Reyes, Marcus","s":1,"a":109995.0,"g":12852.35}]},"Nissan":{"total_sales":61,"total_amount":1917615.0,"total_gross":292480.96,"total_fi":84348.52,"total_fe":208132.44,"lt":[{"k":"Inbound","s":12,"a":352129.0,"g":61951.16},{"k":"Internet","s":7,"a":259915.0,"g":30155.53},{"k":"Outbound","s":33,"a":945629.0,"g":148077.65},{"k":"Showroom","s":9,"a":359942.0,"g":52296.62}],"ls":[{"k":"Clasif Online","s":1,"a":18911.0,"g":7067.95},{"k":"Email Blast/Compramos tu Auto","s":2,"a":74980.0,"g":5759.32},{"k":"FORMULARIO INST | FACEBOOK","s":2,"a":97882.0,"g":11583.74},{"k":"Facebook","s":11,"a":339172.0,"g":46059.44},{"k":"Instagram","s":1,"a":26495.0,"g":4530.18},{"k":"Internet/Website","s":4,"a":114590.0,"g":14425.07},{"k":"LGG:Text blast -NIssan","s":1,"a":17055.0,"g":3469.99},{"k":"NISSAN FB MESSENGER","s":2,"a":58363.0,"g":9566.44},{"k":"Publicidad Vendedor","s":13,"a":378815.0,"g":62552.48},{"k":"Referido Fabricante/Corporativo","s":8,"a":264001.0,"g":48405.83},{"k":"Service","s":4,"a":123581.0,"g":19008.48},{"k":"Solicita tu oferta","s":1,"a":36795.0,"g":2351.68},{"k":"TEXTO SAKARI NISSAN","s":1,"a":49820.0,"g":3183.68},{"k":"Whatsapp","s":10,"a":317155.0,"g":54516.68}],"nu":{"N":{"s":29,"a":1130442.0,"g":134271.05},"U":{"s":32,"a":787173.0,"g":158209.91}},"sp":[{"name":"Melendez, Gabriel","s":15,"a":327204.0,"g":71935.88},{"name":"Nieves Viruet, Edgardo","s":8,"a":242426.0,"g":44309.48},{"name":"Pagan Mendoza, Jessica","s":8,"a":243305.0,"g":40901.47},{"name":"Gonzalez, Gilberto","s":9,"a":334828.0,"g":34432.77},{"name":"Martinez Collazo, Erich J","s":7,"a":247256.0,"g":33199.95}]},"Toyota":{"total_sales":363,"total_amount":15075803.5,"total_gross":1924512.62,"total_fi":576249.9,"total_fe":1348262.72,"lt":[{"k":"Inbound","s":90,"a":3771325.4,"g":502021.14},{"k":"Internet","s":25,"a":1140868.5,"g":154132.61},{"k":"No Lead Type","s":30,"a":680660.6,"g":73459.86},{"k":"Outbound","s":108,"a":4571382.0,"g":549784.44},{"k":"Service","s":16,"a":711310.0,"g":84211.08},{"k":"Showroom","s":94,"a":4200257.0,"g":560903.49}],"ls":[{"k":"Auto Alert Inbound","s":12,"a":493393.0,"g":66858.54},{"k":"Auto Alert Marquesina","s":3,"a":112990.0,"g":15517.62},{"k":"Auto Alert Outbound","s":42,"a":1801885.0,"g":223217.84},{"k":"Autoalert: Auto Alert Marquesina","s":1,"a":51995.0,"g":5184.5},{"k":"Autoalert: Auto Alert Outbound","s":4,"a":231885.0,"g":20782.11},{"k":"Autocentro Toyota","s":4,"a":170217.0,"g":14171.91},{"k":"Clasif Online","s":4,"a":125990.0,"g":17181.66},{"k":"Compra Confiado","s":1,"a":35995.0,"g":5250.97},{"k":"Dealership Website: Autocentro Toyota","s":1,"a":56645.0,"g":2598.12},{"k":"Email Blast/Compramos tu Auto","s":1,"a":52950.0,"g":2025.0},{"k":"Facebook","s":64,"a":2553523.0,"g":319693.5},{"k":"Instagram","s":3,"a":161990.0,"g":21579.78},{"k":"Internet/Website","s":36,"a":1497546.0,"g":198659.16},{"k":"LEAD FACEBOOK | TOYOTA","s":10,"a":442382.5,"g":74546.23},{"k":"LGG:Prof Angel Rosa","s":1,"a":79000.0,"g":6505.52},{"k":"No Lead Source","s":29,"a":638165.6,"g":65612.12},{"k":"Periodico","s":3,"a":121390.0,"g":15208.86},{"k":"Publicidad Vendedor","s":72,"a":3134263.0,"g":439064.12},{"k":"Radio","s":4,"a":150985.0,"g":14890.26},{"k":"Referido","s":4,"a":268890.0,"g":37105.12},{"k":"Referido Fabricante/Corporativo","s":39,"a":1835229.4,"g":228033.75},{"k":"Referido Vendedor","s":1,"a":29495.0,"g":6497.5},{"k":"Repeat","s":5,"a":200380.0,"g":11360.17},{"k":"Repeat Customer","s":1,"a":51995.0,"g":12323.02},{"k":"TEXTO SAKARI TOYOTA","s":3,"a":104793.0,"g":17026.8},{"k":"TOYOTA FB MESSENGER","s":4,"a":214841.0,"g":24621.89},{"k":"TOYOTA TIKTOK LEAD","s":1,"a":36995.0,"g":9411.17},{"k":"Text Blast","s":4,"a":184530.0,"g":23060.12},{"k":"Whatsapp","s":6,"a":235465.0,"g":26525.26}],"nu":{"N":{"s":269,"a":12519771.5,"g":1563170.13},"U":{"s":94,"a":2556032.0,"g":361342.49}},"sp":[{"name":"Sepulveda, Luis","s":17,"a":673379.0,"g":96871.59},{"name":"Menendez, Ismael","s":11,"a":651455.0,"g":93715.87},{"name":"Laboy Ramos, Javier","s":17,"a":691869.0,"g":90429.13},{"name":"De Soto, Luis","s":15,"a":611919.9,"g":89205.03},{"name":"Santiago Luna, Rosalyn","s":15,"a":607379.0,"g":85664.13}]}},"2026-02":{"Chrysler":{"total_sales":97,"total_amount":5398034.0,"total_gross":470117.75,"total_fi":98780.58,"total_fe":371337.17,"lt":[{"k":"Inbound","s":29,"a":1540342.0,"g":142867.11},{"k":"Internet","s":13,"a":795003.0,"g":47404.21},{"k":"No Lead Type","s":2,"a":94000.0,"g":5379.14},{"k":"Outbound","s":30,"a":1543645.0,"g":152353.58},{"k":"Service","s":5,"a":257972.0,"g":6171.97},{"k":"Showroom","s":18,"a":1167072.0,"g":115941.74}],"ls":[{"k":"Auto Alert Inbound","s":2,"a":142486.0,"g":20861.34},{"k":"Auto Alert Marquesina","s":1,"a":83995.0,"g":10333.96},{"k":"Auto Alert Outbound","s":2,"a":112009.0,"g":9897.72},{"k":"CHRYSLER FB MESSENGER","s":3,"a":189485.0,"g":10850.85},{"k":"Clasif Online","s":4,"a":141876.0,"g":14618.94},{"k":"DS *Dealer Website","s":1,"a":56491.0,"g":-47.66},{"k":"FORMULARIO INST | FACEBOOK","s":1,"a":49500.0,"g":-3905.83},{"k":"Facebook","s":16,"a":1001187.0,"g":87953.99},{"k":"Internet/Website","s":2,"a":123390.0,"g":12399.59},{"k":"LGG:Chrysler - Text","s":1,"a":93495.0,"g":5143.97},{"k":"LGG:Facebook Chrysler Calls","s":2,"a":112986.0,"g":8025.17},{"k":"Lives Locally","s":11,"a":650338.0,"g":74272.96},{"k":"No Lead Source","s":2,"a":94000.0,"g":5379.14},{"k":"PR - FCA Google Leads","s":2,"a":84341.0,"g":10891.64},{"k":"PR - Facebook lead","s":2,"a":140490.0,"g":10077.8},{"k":"Publicidad Vendedor","s":20,"a":1018103.0,"g":106935.74},{"k":"Referido","s":1,"a":34991.0,"g":6254.72},{"k":"Referido Fabricante/Corporativo","s":6,"a":281565.0,"g":21118.8},{"k":"Service Customer","s":7,"a":381962.0,"g":16291.68},{"k":"TEXTOS SAKARI CDJR","s":1,"a":68140.0,"g":4400.03},{"k":"Text Blast","s":2,"a":106791.0,"g":4671.8},{"k":"Whatsapp","s":8,"a":430413.0,"g":33691.4}],"nu":{"N":{"s":71,"a":4440367.0,"g":360943.38},"U":{"s":26,"a":957667.0,"g":109174.37}},"sp":[{"name":"Serrano, Carlos","s":14,"a":692741.0,"g":75325.24},{"name":"Flores Ortiz, Joel","s":7,"a":428066.0,"g":46585.5},{"name":"Vaz, Fernando","s":9,"a":511099.0,"g":43994.12},{"name":"Serrano, Guillermo","s":6,"a":355462.0,"g":36330.98},{"name":"Malave, Jose","s":5,"a":392472.0,"g":32479.61}]},"Mas SJ":{"total_sales":41,"total_amount":1641279.0,"total_gross":204574.06,"total_fi":27112.19,"total_fe":177461.87,"lt":[{"k":"Inbound","s":9,"a":376030.0,"g":49217.67},{"k":"Internet","s":10,"a":439383.0,"g":49218.54},{"k":"Outbound","s":16,"a":602293.0,"g":80290.25},{"k":"Showroom","s":6,"a":223573.0,"g":25847.6}],"ls":[{"k":"AC+ FB MESSENGER","s":7,"a":344228.0,"g":41091.15},{"k":"Clasif Online","s":2,"a":64093.0,"g":10141.69},{"k":"Facebook","s":3,"a":110995.0,"g":8202.6},{"k":"Internet/Website","s":1,"a":61995.0,"g":11745.07},{"k":"LGG:Clasificados Online Mas SJ","s":2,"a":43155.0,"g":2550.83},{"k":"LGG:Texto Sakari","s":1,"a":52000.0,"g":5576.56},{"k":"Publicidad Vendedor","s":16,"a":703700.0,"g":83906.84},{"k":"Referido Fabricante/Corporativo","s":5,"a":176885.0,"g":21422.73},{"k":"Walk In","s":1,"a":51995.0,"g":10310.0},{"k":"Whatsapp","s":3,"a":32233.0,"g":9626.59}],"nu":{"U":{"s":41,"a":1641279.0,"g":204574.06}},"sp":[{"name":"Mangual, Emmanuel","s":7,"a":326175.0,"g":46657.38},{"name":"Sosa, Andres","s":4,"a":192782.0,"g":36224.26},{"name":"Gonzalez Reyes, Marcus","s":6,"a":199573.0,"g":32810.9},{"name":"Hidalgo Negron, Tylee","s":6,"a":287241.0,"g":28517.92},{"name":"Santiago Rodriguez, Melvin","s":7,"a":244230.0,"g":24788.12}]},"Mas Guaynabo":{"total_sales":28,"total_amount":1281933.0,"total_gross":154762.51,"total_fi":21876.3,"total_fe":132886.21,"lt":[{"k":"Inbound","s":16,"a":714867.0,"g":89857.73},{"k":"Internet","s":3,"a":137495.0,"g":5075.9},{"k":"No Lead Type","s":2,"a":65495.0,"g":6724.28},{"k":"Outbound","s":3,"a":103581.0,"g":18361.13},{"k":"Showroom","s":4,"a":260495.0,"g":34743.47}],"ls":[{"k":"Billboard","s":1,"a":47500.0,"g":12895.75},{"k":"Clasif Online","s":1,"a":104995.0,"g":15634.16},{"k":"FB MESSENGER AC+ GUAYNABO","s":1,"a":17500.0,"g":-669.52},{"k":"Facebook","s":7,"a":323071.0,"g":48469.27},{"k":"LGG:Autocentro Mas-Mu\u00f1oz Rivera","s":1,"a":89995.0,"g":3365.07},{"k":"No Lead Source","s":11,"a":489392.0,"g":58310.76},{"k":"Publicidad Vendedor","s":5,"a":179480.0,"g":14376.67},{"k":"Textos Sakari AC+ G","s":1,"a":30000.0,"g":2380.35}],"nu":{"U":{"s":28,"a":1281933.0,"g":154762.51}},"sp":[{"name":"Rivas Suarez, Miguel","s":7,"a":349397.0,"g":46109.94},{"name":"Figueroa Otero, Kris","s":6,"a":231985.0,"g":30805.0},{"name":"Rodriguez Albelo, Steven","s":3,"a":106990.0,"g":18934.42},{"name":"Gilbes Rivera, Alina","s":4,"a":226980.0,"g":15850.92},{"name":"Flores Ortiz, Joel","s":1,"a":140000.0,"g":14042.39}]},"Nissan":{"total_sales":65,"total_amount":2249014.0,"total_gross":324748.95,"total_fi":93251.13,"total_fe":231497.82,"lt":[{"k":"Inbound","s":17,"a":626859.0,"g":78191.96},{"k":"Internet","s":10,"a":340729.0,"g":43042.74},{"k":"No Lead Type","s":2,"a":75950.0,"g":10131.89},{"k":"Outbound","s":32,"a":1076486.0,"g":175590.68},{"k":"Showroom","s":4,"a":128990.0,"g":17791.68}],"ls":[{"k":"Clasif Online","s":3,"a":105614.0,"g":16381.25},{"k":"Email Blast/Compramos tu Auto","s":4,"a":181107.0,"g":24597.78},{"k":"Facebook","s":16,"a":630132.0,"g":95343.7},{"k":"Internet/Website","s":3,"a":104277.0,"g":13788.29},{"k":"LGG: Sakari","s":1,"a":17995.0,"g":6296.96},{"k":"LGG:Text blast -NIssan","s":1,"a":25495.0,"g":6650.2},{"k":"LGG:sakari","s":3,"a":118606.0,"g":15761.91},{"k":"NISSAN FB MESSENGER","s":2,"a":81906.0,"g":6247.37},{"k":"No Lead Source","s":2,"a":75950.0,"g":10131.89},{"k":"Publicidad Vendedor","s":14,"a":414315.0,"g":70449.57},{"k":"Referido Fabricante/Corporativo","s":3,"a":105801.0,"g":8853.08},{"k":"Service","s":4,"a":138980.0,"g":16731.88},{"k":"TEXTO SAKARI NISSAN","s":3,"a":96727.0,"g":8086.3},{"k":"Whatsapp","s":6,"a":152109.0,"g":25428.77}],"nu":{"U":{"s":23,"a":539946.0,"g":106517.04},"N":{"s":42,"a":1709068.0,"g":218231.91}},"sp":[{"name":"Rohena Lopez, Jonathan","s":14,"a":551617.0,"g":76016.76},{"name":"Melendez, Gabriel","s":8,"a":178845.0,"g":40112.02},{"name":"Pagan Mendoza, Jessica","s":7,"a":313380.0,"g":39806.08},{"name":"Martinez Collazo, Erich J","s":7,"a":240170.0,"g":39439.86},{"name":"Gonzalez, Gilberto","s":7,"a":226984.0,"g":35648.83}]},"Toyota":{"total_sales":323,"total_amount":13209724.2,"total_gross":1705932.79,"total_fi":524522.07,"total_fe":1181410.72,"lt":[{"k":"Inbound","s":77,"a":3321444.0,"g":436176.09},{"k":"Internet","s":16,"a":641395.0,"g":96751.35},{"k":"No Lead Type","s":22,"a":763914.2,"g":50706.62},{"k":"Outbound","s":120,"a":4740041.0,"g":644280.46},{"k":"Service","s":5,"a":342254.0,"g":36709.37},{"k":"Showroom","s":83,"a":3400676.0,"g":441308.9}],"ls":[{"k":"Auto Alert Inbound","s":5,"a":269580.0,"g":39942.2},{"k":"Auto Alert Marquesina","s":2,"a":99490.0,"g":7831.19},{"k":"Auto Alert Outbound","s":34,"a":1316228.0,"g":167219.43},{"k":"Autoalert: Auto Alert Outbound","s":3,"a":226490.0,"g":17187.26},{"k":"Autocentro Toyota","s":2,"a":124895.0,"g":14047.16},{"k":"Clasif Online","s":7,"a":342628.0,"g":33387.86},{"k":"Compra Confiado","s":1,"a":37239.0,"g":5077.88},{"k":"Dealership Website: Autocentro Toyota","s":1,"a":55495.0,"g":3612.7},{"k":"Email Blast/Compramos tu Auto","s":1,"a":73995.0,"g":10410.71},{"k":"Facebook","s":78,"a":3129090.0,"g":450619.08},{"k":"Instagram","s":2,"a":73490.0,"g":6452.41},{"k":"Internet/Website","s":32,"a":1253514.0,"g":164320.09},{"k":"LEAD FACEBOOK | TOYOTA","s":6,"a":215886.0,"g":29864.59},{"k":"No Lead Source","s":22,"a":763914.2,"g":50706.62},{"k":"Periodico","s":2,"a":73495.0,"g":14553.89},{"k":"Procura por vendedor","s":1,"a":31500.0,"g":5155.82},{"k":"Publicidad Vendedor","s":63,"a":2530934.0,"g":332599.04},{"k":"Radio","s":1,"a":36995.0,"g":2701.62},{"k":"Referido","s":3,"a":191880.0,"g":19992.78},{"k":"Referido Fabricante/Corporativo","s":34,"a":1429319.0,"g":189246.92},{"k":"Repeat","s":6,"a":219875.0,"g":34150.5},{"k":"Repeat Customer","s":1,"a":36807.0,"g":6024.17},{"k":"TOYOTA FB MESSENGER","s":7,"a":263375.0,"g":47761.72},{"k":"Text Blast","s":3,"a":121485.0,"g":22926.24},{"k":"Whatsapp","s":6,"a":292125.0,"g":30140.91}],"nu":{"N":{"s":228,"a":10129787.0,"g":1302660.3},"U":{"s":95,"a":3079937.2,"g":403272.49}},"sp":[{"name":"De Soto, Luis","s":17,"a":855179.0,"g":103747.12},{"name":"Cruz, Ivelisse","s":22,"a":838205.0,"g":98417.07},{"name":"Sepulveda, Luis","s":14,"a":524336.0,"g":77902.04},{"name":"Volckers, Carlos","s":12,"a":500742.0,"g":73544.9},{"name":"Lopez Cortes, Giovanny","s":14,"a":727965.0,"g":71185.79}]}},"2026-03":{"Chrysler":{"total_sales":152,"total_amount":8525087.54,"total_gross":763738.98,"total_fi":162375.5,"total_fe":601363.48,"lt":[{"k":"Inbound","s":43,"a":2263599.54,"g":204279.7},{"k":"Internet","s":15,"a":910020.0,"g":75514.12},{"k":"No Lead Type","s":6,"a":492724.0,"g":40729.38},{"k":"Outbound","s":59,"a":3181928.0,"g":291878.73},{"k":"Service","s":4,"a":261688.0,"g":34091.45},{"k":"Showroom","s":25,"a":1415128.0,"g":117245.6}],"ls":[{"k":"Auto Alert Inbound","s":1,"a":35000.0,"g":3378.75},{"k":"Auto Alert Outbound","s":3,"a":215481.0,"g":10586.68},{"k":"Autoalert: Auto Alert Outbound","s":2,"a":121881.0,"g":7305.98},{"k":"CHRYSLER FB MESSENGER","s":5,"a":305576.0,"g":20699.54},{"k":"Clasif Online","s":8,"a":377746.0,"g":29697.58},{"k":"DS *Facebook","s":1,"a":77896.0,"g":9584.13},{"k":"DS *Referral","s":1,"a":30000.0,"g":3753.18},{"k":"DS *RevTeam-CompramosTu","s":2,"a":159295.0,"g":17161.28},{"k":"DS CHRYSLER FB MESSENGE","s":1,"a":44995.0,"g":11585.25},{"k":"Dealer Inspire/Contact Us","s":2,"a":136495.0,"g":15775.25},{"k":"DealerInspire - Get ePrice","s":1,"a":67995.0,"g":2185.78},{"k":"Drive by location","s":2,"a":139429.0,"g":9157.75},{"k":"Email Blast/Compramos tu Auto","s":1,"a":79078.0,"g":6659.59},{"k":"Facebook","s":16,"a":935689.54,"g":84383.26},{"k":"Internet/Website","s":1,"a":62991.0,"g":4817.33},{"k":"LGG: Facebook Chrysler Calls","s":1,"a":51995.0,"g":1187.63},{"k":"LGG:Facebook Chrysler Calls","s":3,"a":174982.0,"g":8193.65},{"k":"Lead Facebook Chrysler","s":1,"a":67991.0,"g":12347.95},{"k":"Lives Locally","s":16,"a":795195.0,"g":66106.16},{"k":"No Lead Source","s":6,"a":492724.0,"g":40729.38},{"k":"OFERTAS CHRYSLER","s":1,"a":59991.0,"g":3539.07},{"k":"Periodico","s":1,"a":52995.0,"g":3508.77},{"k":"Publicidad Vendedor","s":46,"a":2274437.0,"g":210984.87},{"k":"Radio","s":1,"a":44991.0,"g":-656.55},{"k":"Referido","s":2,"a":96569.0,"g":9857.24},{"k":"Referido Fabricante/Corporativo","s":6,"a":400490.0,"g":33581.67},{"k":"Repetido","s":2,"a":167991.0,"g":18277.35},{"k":"Service Customer","s":5,"a":328679.0,"g":41188.81},{"k":"Text Blast","s":1,"a":61995.0,"g":5693.99},{"k":"Whatsapp","s":13,"a":664515.0,"g":72467.66}],"nu":{"N":{"s":109,"a":6985871.0,"g":562746.75},"U":{"s":43,"a":1539216.54,"g":200992.23}},"sp":[{"name":"Serrano, Carlos","s":15,"a":895316.0,"g":84960.08},{"name":"Quinones, Brenda L.","s":16,"a":859435.0,"g":67950.02},{"name":"Malave, Jose","s":11,"a":651129.0,"g":67012.8},{"name":"Flores Ortiz, Joel","s":9,"a":463327.54,"g":53410.11},{"name":"Perez, Carlos","s":12,"a":742921.0,"g":46311.93}]},"Mas SJ":{"total_sales":50,"total_amount":1837994.36,"total_gross":335176.48,"total_fi":35005.13,"total_fe":300171.35,"lt":[{"k":"Inbound","s":13,"a":594651.36,"g":85580.15},{"k":"Internet","s":8,"a":327377.0,"g":81149.18},{"k":"No Lead Type","s":3,"a":120815.0,"g":14303.12},{"k":"Outbound","s":24,"a":716151.0,"g":146962.35},{"k":"Showroom","s":2,"a":79000.0,"g":7181.68}],"ls":[{"k":"AC+ FB MESSENGER","s":6,"a":254532.0,"g":68851.79},{"k":"Autocentro M\u00c3\u0081S / \u00c2\u00a1Av\u00c3\u00adsame si el precio baja!","s":1,"a":29995.0,"g":871.2},{"k":"Clasif Online","s":3,"a":115874.0,"g":31574.38},{"k":"Facebook","s":7,"a":397805.0,"g":36609.21},{"k":"Internet/Website","s":1,"a":24750.0,"g":4011.13},{"k":"LGG:Autocentro Mas Mu\u00f1oz Rivera","s":1,"a":42850.0,"g":11426.19},{"k":"No Lead Source","s":3,"a":120815.0,"g":14303.12},{"k":"Publicidad Vendedor","s":21,"a":657925.36,"g":111867.83},{"k":"Referido Fabricante/Corporativo","s":3,"a":77290.0,"g":21403.35},{"k":"Whatsapp","s":4,"a":116158.0,"g":34258.28}],"nu":{"U":{"s":50,"a":1837994.36,"g":335176.48}},"sp":[{"name":"Hidalgo Negron, Tylee","s":10,"a":335566.36,"g":61732.71},{"name":"Sosa, Andres","s":7,"a":275109.0,"g":59338.31},{"name":"Mangual, Emmanuel","s":7,"a":236230.0,"g":52810.87},{"name":"Gonzalez Reyes, Marcus","s":8,"a":321278.0,"g":49300.81},{"name":"Santiago Rodriguez, Melvin","s":5,"a":270064.0,"g":38413.66}]},"Mas Guaynabo":{"total_sales":42,"total_amount":1708137.0,"total_gross":194824.15,"total_fi":35511.91,"total_fe":159312.24,"lt":[{"k":"Inbound","s":18,"a":865804.0,"g":96287.96},{"k":"Internet","s":5,"a":191985.0,"g":19247.43},{"k":"No Lead Type","s":3,"a":48863.0,"g":6796.15},{"k":"Outbound","s":12,"a":417500.0,"g":53446.41},{"k":"Showroom","s":4,"a":183985.0,"g":19046.2}],"ls":[{"k":"Autocentro MAS / Avisame si el precio baja","s":1,"a":32995.0,"g":3676.21},{"k":"Clasif Online","s":1,"a":54995.0,"g":6591.29},{"k":"FB MESSENGER AC+ GUAYNABO","s":2,"a":100990.0,"g":10296.72},{"k":"Facebook","s":12,"a":436378.0,"g":31024.23},{"k":"LGG: Autocentro Mas-Mu\u00f1oz Rivera","s":1,"a":23000.0,"g":3051.12},{"k":"LGG: Clasificados Online Mas SJ","s":1,"a":35000.0,"g":2223.38},{"k":"No Lead Source","s":12,"a":517963.0,"g":64493.19},{"k":"Publicidad Vendedor","s":9,"a":335326.0,"g":51364.86},{"k":"Referido","s":1,"a":53000.0,"g":12165.0},{"k":"Service Customer","s":1,"a":94995.0,"g":6535.1},{"k":"Whatsapp","s":1,"a":23495.0,"g":3403.05}],"nu":{"U":{"s":42,"a":1708137.0,"g":194824.15}},"sp":[{"name":"Figueroa Otero, Kris","s":13,"a":487989.0,"g":52171.23},{"name":"Gilbes Rivera, Alina","s":9,"a":342010.0,"g":39456.29},{"name":"Figueroa Hernandez, Nelson","s":6,"a":287485.0,"g":38713.35},{"name":"Rivas Suarez, Miguel","s":5,"a":174975.0,"g":26111.38},{"name":"Lopez Cortes, Giovanny","s":2,"a":139840.0,"g":21264.19}]},"Nissan":{"total_sales":86,"total_amount":2839678.0,"total_gross":409177.37,"total_fi":126112.5,"total_fe":283064.87,"lt":[{"k":"Inbound","s":17,"a":586999.0,"g":84794.64},{"k":"Internet","s":10,"a":435009.0,"g":54641.31},{"k":"No Lead Type","s":2,"a":54473.0,"g":9767.95},{"k":"Outbound","s":50,"a":1528422.0,"g":219069.29},{"k":"Service","s":1,"a":33500.0,"g":5849.18},{"k":"Showroom","s":6,"a":201275.0,"g":35055.0}],"ls":[{"k":"Billboard","s":1,"a":52995.0,"g":937.68},{"k":"Clasif Online","s":3,"a":62485.0,"g":16383.4},{"k":"Dealership Website: Autocentro Nissan / Trade in","s":1,"a":37500.0,"g":3919.18},{"k":"Email Blast/Compramos tu Auto","s":3,"a":94485.0,"g":11315.66},{"k":"FORMULARIO INST | FACEBOOK","s":1,"a":32395.0,"g":3819.0},{"k":"Facebook","s":8,"a":220175.0,"g":37328.52},{"k":"Internet/Website","s":3,"a":104790.0,"g":11935.12},{"k":"No Lead Source","s":2,"a":54473.0,"g":9767.95},{"k":"Periodico","s":1,"a":37800.0,"g":7454.98},{"k":"Publicidad Vendedor","s":21,"a":743902.0,"g":106129.27},{"k":"Referido Fabricante/Corporativo","s":2,"a":54145.0,"g":4497.08},{"k":"Service","s":10,"a":339157.0,"g":50895.53},{"k":"TEXTO SAKARI NISSAN","s":8,"a":365114.0,"g":46903.13},{"k":"TV","s":1,"a":9500.0,"g":3021.05},{"k":"Text Blast","s":2,"a":98555.0,"g":5779.49},{"k":"Whatsapp","s":19,"a":532207.0,"g":89090.33}],"nu":{"N":{"s":53,"a":2116440.0,"g":270064.32},"U":{"s":33,"a":723238.0,"g":139113.05}},"sp":[{"name":"Melendez, Gabriel","s":19,"a":558003.0,"g":83110.33},{"name":"Martinez Collazo, Erich J","s":13,"a":450382.0,"g":69364.88},{"name":"Miranda, Crismarie","s":9,"a":256513.0,"g":45021.13},{"name":"Rohena Lopez, Jonathan","s":10,"a":361001.0,"g":41998.3},{"name":"Nieves Viruet, Edgardo","s":7,"a":234424.0,"g":40001.1}]},"Toyota":{"total_sales":370,"total_amount":15136850.4,"total_gross":1923323.46,"total_fi":589817.66,"total_fe":1333505.8,"lt":[{"k":"Inbound","s":110,"a":4423895.0,"g":559738.76},{"k":"Internet","s":36,"a":1516947.0,"g":198484.53},{"k":"No Lead Type","s":28,"a":640625.4,"g":19862.66},{"k":"Outbound","s":106,"a":4398097.0,"g":604265.51},{"k":"Service","s":4,"a":197390.0,"g":35508.8},{"k":"Showroom","s":86,"a":3959896.0,"g":505463.2}],"ls":[{"k":"Auto Alert Inbound","s":6,"a":312950.0,"g":41089.89},{"k":"Auto Alert Marquesina","s":1,"a":35800.0,"g":10668.56},{"k":"Auto Alert Outbound","s":26,"a":1251812.0,"g":161660.59},{"k":"Autoalert: Auto Alert Inbound","s":1,"a":39000.0,"g":1375.62},{"k":"Autoalert: Auto Alert Marquesina","s":1,"a":65495.0,"g":7670.0},{"k":"Autoalert: Auto Alert Outbound","s":6,"a":453955.0,"g":36724.2},{"k":"Autocentro Toyota","s":1,"a":53245.0,"g":7561.62},{"k":"Autocentro Toyota / Contacto","s":2,"a":46995.0,"g":14596.1},{"k":"Autocentro Toyota / \u00c2\u00a1Av\u00c3\u00adsame si el precio baja!","s":1,"a":71173.0,"g":4570.62},{"k":"Clasif Online","s":4,"a":129390.0,"g":20534.65},{"k":"Compra Confiado","s":1,"a":65500.0,"g":4670.62},{"k":"EVENTO","s":2,"a":105990.0,"g":14854.09},{"k":"Facebook","s":59,"a":2321110.0,"g":299080.79},{"k":"Instagram","s":1,"a":41500.0,"g":7262.41},{"k":"Internet/Website","s":35,"a":1677789.0,"g":205554.53},{"k":"LEAD FACEBOOK | TOYOTA","s":6,"a":211367.0,"g":26087.53},{"k":"LGG:Prof Angel Rosa","s":1,"a":59180.0,"g":11371.17},{"k":"LGG:Texto Sakari","s":1,"a":17995.0,"g":4146.34},{"k":"LGG:Textos Evento","s":1,"a":55500.0,"g":6035.0},{"k":"Mantenimiento Expreso Form","s":1,"a":58995.0,"g":7984.0},{"k":"No Lead Source","s":28,"a":640625.4,"g":19862.66},{"k":"Periodico","s":3,"a":130490.0,"g":24724.16},{"k":"Procura por vendedor","s":1,"a":39500.0,"g":4301.9},{"k":"Publicidad Vendedor","s":65,"a":2629213.0,"g":369067.61},{"k":"Radio","s":2,"a":73150.0,"g":9770.07},{"k":"Referido","s":6,"a":248998.0,"g":25960.4},{"k":"Referido Fabricante/Corporativo","s":58,"a":2319112.0,"g":316431.78},{"k":"Referido Vendedor","s":1,"a":59495.0,"g":7086.78},{"k":"Repeat","s":5,"a":200936.0,"g":35857.67},{"k":"Repeat Customer","s":1,"a":35995.0,"g":5899.17},{"k":"Repetido","s":1,"a":54995.0,"g":6210.0},{"k":"TEXTO SAKARI TOYOTA","s":1,"a":33995.0,"g":1211.66},{"k":"TOYOTA FB MESSENGER","s":18,"a":737012.0,"g":95395.78},{"k":"Text Blast","s":4,"a":151485.0,"g":19263.81},{"k":"Walk-In","s":1,"a":35500.0,"g":2457.0},{"k":"Website","s":1,"a":50900.0,"g":1375.71},{"k":"Whatsapp","s":17,"a":620708.0,"g":84948.97}],"nu":{"N":{"s":257,"a":11697302.0,"g":1456329.28},"U":{"s":113,"a":3439548.4,"g":466994.18}},"sp":[{"name":"Cruz, Ivelisse","s":22,"a":908408.0,"g":121873.34},{"name":"Redon, Manuel","s":21,"a":794110.0,"g":109088.94},{"name":"Lopez Cortes, Giovanny","s":24,"a":1266314.0,"g":104390.63},{"name":"De Soto, Luis","s":18,"a":851507.0,"g":93006.67},{"name":"Torres, Ruben","s":16,"a":584993.0,"g":85209.53}]}},"2026-04":{"Chrysler":{"total_sales":137,"total_amount":7476739.0,"total_gross":780269.13,"total_fi":181439.69,"total_fe":598829.45,"lt":[{"k":"Inbound","s":51,"a":2597989.0,"g":269556.8},{"k":"Internet","s":9,"a":502699.0,"g":57112.72},{"k":"No Lead Type","s":9,"a":509281.0,"g":54738.05},{"k":"Outbound","s":42,"a":2147935.0,"g":208703.0},{"k":"Service","s":4,"a":274782.0,"g":30830.32},{"k":"Showroom","s":22,"a":1444053.0,"g":159328.25}],"ls":[{"k":"Auto Alert Inbound","s":1,"a":72991.0,"g":10736.42},{"k":"CHRYSLER FB MESSENGER","s":1,"a":25000.0,"g":4229.1},{"k":"CHRYSLER:PR-Facebook Lead","s":1,"a":46491.0,"g":-838.99},{"k":"Clasif Online","s":6,"a":212977.0,"g":21840.8},{"k":"Drive by location","s":3,"a":286990.0,"g":32797.41},{"k":"EVENTO","s":3,"a":195486.0,"g":20062.72},{"k":"Facebook","s":21,"a":1198345.0,"g":126165.44},{"k":"Instagram","s":1,"a":73300.0,"g":11325.04},{"k":"Internet/Website","s":4,"a":178482.0,"g":12822.35},{"k":"LGG:Facebook Chrysler Calls","s":2,"a":139986.0,"g":18122.07},{"k":"LGG:Texto Sakari","s":2,"a":95736.0,"g":15537.82},{"k":"Lives Locally","s":5,"a":304851.0,"g":26572.85},{"k":"No Lead Source","s":9,"a":509281.0,"g":54738.05},{"k":"Publicidad Vendedor","s":45,"a":2447829.0,"g":255103.69},{"k":"Radio","s":1,"a":0.0,"g":4000.0},{"k":"Referido","s":2,"a":137986.0,"g":5219.12},{"k":"Referido Fabricante/Corporativo","s":9,"a":353427.0,"g":32798.66},{"k":"Service Customer","s":6,"a":405768.0,"g":41034.27},{"k":"Text Blast","s":2,"a":157982.0,"g":17739.23},{"k":"Walk in","s":1,"a":41000.0,"g":5504.88},{"k":"Whatsapp","s":12,"a":592831.0,"g":64758.21}],"nu":{"N":{"s":89,"a":5792840.0,"g":573009.68},"U":{"s":48,"a":1683899.0,"g":207259.46}},"sp":[{"name":"Serrano, Carlos","s":20,"a":1230507.0,"g":133500.86},{"name":"Cordero, Jahaira","s":14,"a":781564.0,"g":86909.66},{"name":"Ruiz, Emmanuel","s":6,"a":498776.0,"g":67735.79},{"name":"Rojas Medina, Cesar","s":7,"a":438409.0,"g":59613.46},{"name":"Serrano, Guillermo","s":11,"a":591956.0,"g":51567.72}]},"Mas SJ":{"total_sales":40,"total_amount":1378410.0,"total_gross":255788.22,"total_fi":31054.23,"total_fe":224733.99,"lt":[{"k":"Inbound","s":17,"a":645515.0,"g":125097.28},{"k":"Internet","s":7,"a":284696.0,"g":44139.08},{"k":"No Lead Type","s":1,"a":1575.0,"g":-5.0},{"k":"Outbound","s":15,"a":446624.0,"g":86556.86}],"ls":[{"k":"Autocentro M\u00c3\u0081S","s":1,"a":29995.0,"g":2443.85},{"k":"Autocentro M\u00c3\u0081S / Trade In","s":1,"a":21995.0,"g":3226.06},{"k":"Clasif Online","s":4,"a":169240.0,"g":33661.19},{"k":"Facebook","s":7,"a":222491.0,"g":48330.0},{"k":"Internet/Website","s":2,"a":96895.0,"g":12149.8},{"k":"LGG:Clasificados Online Mas SJ","s":4,"a":119711.0,"g":22473.47},{"k":"No Lead Source","s":1,"a":1575.0,"g":-5.0},{"k":"Publicidad Vendedor","s":18,"a":574482.0,"g":105941.55},{"k":"TEXTO SAKARI AC+ SJ","s":1,"a":112995.0,"g":15995.7},{"k":"Whatsapp","s":1,"a":29031.0,"g":11571.6}],"nu":{"U":{"s":40,"a":1378410.0,"g":255788.22}},"sp":[{"name":"Hidalgo Negron, Tylee","s":6,"a":323837.0,"g":49505.73},{"name":"Santiago Rodriguez, Melvin","s":8,"a":254783.0,"g":44563.91},{"name":"Sosa, Andres","s":6,"a":199740.0,"g":44084.17},{"name":"Mangual Lasanta, Emmanuel","s":4,"a":141635.0,"g":39714.9},{"name":"Gonzalez Reyes, Marcus","s":4,"a":134813.0,"g":24608.17}]},"Mas Guaynabo":{"total_sales":42,"total_amount":1518724.0,"total_gross":190595.09,"total_fi":38048.2,"total_fe":152546.89,"lt":[{"k":"Inbound","s":23,"a":727853.0,"g":112490.91},{"k":"Internet","s":5,"a":148985.0,"g":13358.65},{"k":"No Lead Type","s":3,"a":118595.0,"g":13730.0},{"k":"Outbound","s":9,"a":424301.0,"g":39252.46},{"k":"Showroom","s":2,"a":98990.0,"g":11763.07}],"ls":[{"k":"Clasif Online","s":1,"a":36995.0,"g":7175.44},{"k":"EVENTO","s":2,"a":55495.0,"g":4568.26},{"k":"Facebook","s":7,"a":201306.0,"g":35857.09},{"k":"LGG: Clasificados Online Mas SJ","s":1,"a":20000.0,"g":1890.35},{"k":"LGG: Promociones radio y Paginas web Marca FCA","s":1,"a":51995.0,"g":2280.7},{"k":"LGG:Autocentro Mas-Mu\u00f1oz Rivera","s":1,"a":21495.0,"g":4619.34},{"k":"No Lead Source","s":9,"a":386145.0,"g":36042.47},{"k":"Publicidad Vendedor","s":19,"a":726298.0,"g":93890.93},{"k":"Referido","s":1,"a":18995.0,"g":4270.51}],"nu":{"U":{"s":42,"a":1518724.0,"g":190595.09}},"sp":[{"name":"Figueroa Otero, Kris","s":7,"a":252643.0,"g":47233.55},{"name":"Gilbes Rivera, Alina","s":9,"a":299296.0,"g":42398.51},{"name":"Rivas Suarez, Miguel","s":10,"a":340535.0,"g":41425.15},{"name":"Tirado Santiago, Rafael","s":6,"a":199975.0,"g":28054.66},{"name":"Figueroa Hernandez, Nelson","s":7,"a":382980.0,"g":26567.18}]},"Nissan":{"total_sales":45,"total_amount":1602496.0,"total_gross":227869.22,"total_fi":75321.65,"total_fe":152547.57,"lt":[{"k":"Inbound","s":7,"a":184774.0,"g":34376.95},{"k":"Internet","s":3,"a":120643.0,"g":12890.88},{"k":"No Lead Type","s":2,"a":56785.0,"g":7630.78},{"k":"Outbound","s":28,"a":1008555.0,"g":147381.14},{"k":"Showroom","s":5,"a":231739.0,"g":25589.47}],"ls":[{"k":"Clasif Online","s":2,"a":50990.0,"g":11747.37},{"k":"EVENTO","s":2,"a":85790.0,"g":15059.57},{"k":"Email Blast/Compramos tu Auto","s":3,"a":134400.0,"g":16819.14},{"k":"FORMULARIO INST | FACEBOOK","s":1,"a":37653.0,"g":2962.58},{"k":"Facebook","s":8,"a":265129.0,"g":35368.0},{"k":"Internet/Website","s":1,"a":55495.0,"g":4468.68},{"k":"No Lead Source","s":2,"a":56785.0,"g":7630.78},{"k":"Publicidad Vendedor","s":13,"a":465792.0,"g":64452.66},{"k":"Referido Fabricante/Corporativo","s":2,"a":64990.0,"g":11699.74},{"k":"Service","s":4,"a":166203.0,"g":22983.16},{"k":"TEXTO SAKARI NISSAN","s":1,"a":29995.0,"g":2775.75},{"k":"Text Blast","s":1,"a":34995.0,"g":3818.24},{"k":"Whatsapp","s":5,"a":154279.0,"g":28083.55}],"nu":{"N":{"s":26,"a":1136303.0,"g":127424.89},"U":{"s":19,"a":466193.0,"g":100444.33}},"sp":[{"name":"Rohena Lopez, Jonathan","s":9,"a":347270.0,"g":51999.17},{"name":"Melendez, Gabriel","s":7,"a":217038.0,"g":35614.1},{"name":"Martinez Collazo, Erich J","s":4,"a":160455.0,"g":22360.55},{"name":"Miranda, Crismarie","s":4,"a":114980.0,"g":21275.0},{"name":"Nieves Viruet, Edgardo","s":4,"a":97507.0,"g":20971.36}]},"Toyota":{"total_sales":336,"total_amount":14513464.6,"total_gross":1947684.72,"total_fi":587750.43,"total_fe":1359934.3,"lt":[{"k":"Appraisal","s":1,"a":33495.0,"g":7983.8},{"k":"Inbound","s":101,"a":4378322.0,"g":605329.18},{"k":"Internet","s":27,"a":1151459.0,"g":174834.04},{"k":"No Lead Type","s":21,"a":607347.6,"g":8154.21},{"k":"Outbound","s":103,"a":4587649.0,"g":619259.39},{"k":"Service","s":4,"a":167824.0,"g":20645.12},{"k":"Showroom","s":79,"a":3587368.0,"g":511478.99}],"ls":[{"k":"Auto Alert Inbound","s":9,"a":439320.0,"g":66010.39},{"k":"Auto Alert Outbound","s":31,"a":1433337.0,"g":204963.6},{"k":"Auto Centro / Disponibilidad","s":1,"a":50844.0,"g":7126.1},{"k":"Autoalert: Auto Alert Inbound","s":1,"a":28995.0,"g":2446.82},{"k":"Autoalert: Auto Alert Outbound","s":4,"a":268780.0,"g":16766.7},{"k":"Autocentro Toyota / Contacto","s":3,"a":109635.0,"g":22630.26},{"k":"Autocentro Toyota / Disponibilidad","s":1,"a":33495.0,"g":6398.9},{"k":"Autocentro Toyota / Ofertas","s":1,"a":35495.0,"g":3248.17},{"k":"Autocentro Toyota / \u00c2\u00a1Av\u00c3\u00adsame si el precio baja!","s":1,"a":39000.0,"g":2854.72},{"k":"Billboard","s":1,"a":42995.0,"g":6647.17},{"k":"Clasif Online","s":7,"a":287785.0,"g":31300.07},{"k":"Clasificados Online","s":1,"a":79980.0,"g":12291.05},{"k":"EVENTO","s":2,"a":81085.0,"g":11640.2},{"k":"EVENTO FORM ACT","s":1,"a":40995.0,"g":3036.08},{"k":"Facebook","s":66,"a":2821364.0,"g":406273.62},{"k":"Instagram","s":2,"a":76790.0,"g":10418.21},{"k":"Internet/Website","s":27,"a":1188145.0,"g":191862.85},{"k":"LEAD FACEBOOK | TOYOTA","s":1,"a":46995.0,"g":9059.74},{"k":"LGG:Peri\u00c3\u00b3dico","s":1,"a":33995.0,"g":6424.37},{"k":"No Lead Source","s":21,"a":607347.6,"g":8154.21},{"k":"Periodico","s":2,"a":72259.0,"g":12752.76},{"k":"Podium - Parts","s":1,"a":73995.0,"g":7183.77},{"k":"Podium-Webchat","s":1,"a":34500.0,"g":11361.0},{"k":"Publicidad Vendedor","s":56,"a":2377382.0,"g":313153.75},{"k":"Radio","s":1,"a":30995.0,"g":2880.17},{"k":"Referido","s":5,"a":253865.0,"g":27398.91},{"k":"Referido Fabricante/Corporativo","s":50,"a":2207817.0,"g":314675.15},{"k":"Repeat","s":1,"a":49500.0,"g":3826.0},{"k":"Repeat Customer","s":2,"a":117847.0,"g":19381.63},{"k":"Service","s":1,"a":42500.0,"g":6345.43},{"k":"TEXTO SAKARI TOYOTA","s":1,"a":73495.0,"g":3908.78},{"k":"TOYOTA FB MESSENGER","s":12,"a":474850.0,"g":83412.95},{"k":"Text Blast","s":1,"a":62339.0,"g":4720.2},{"k":"ToyotaPR.com-Contact a Dealer - RAV4 2026 Event","s":1,"a":57580.0,"g":7910.0},{"k":"Walk-In","s":1,"a":47780.0,"g":4731.74},{"k":"Whatsapp","s":18,"a":790383.0,"g":94489.26}],"nu":{"U":{"s":83,"a":2761984.6,"g":389193.91},"N":{"s":253,"a":11751480.0,"g":1558490.81}},"sp":[{"name":"Rivera Cruz, Edgardo","s":15,"a":708405.0,"g":114683.02},{"name":"Menendez Perez, Ismael","s":13,"a":690748.0,"g":109973.7},{"name":"Lopez Sasso, Angel","s":18,"a":656296.0,"g":106185.53},{"name":"De Soto, Luis","s":15,"a":610070.0,"g":94920.71},{"name":"Volckers, Carlos","s":14,"a":621190.0,"g":91253.13}]}},"2026-05":{"Chrysler":{"total_sales":108,"total_amount":6217762.0,"total_gross":660201.77,"total_fi":128248.8,"total_fe":531952.97,"lt":[{"k":"Inbound","s":26,"a":1375900.0,"g":145094.55},{"k":"Internet","s":16,"a":843104.0,"g":93482.59},{"k":"No Lead Type","s":2,"a":186991.0,"g":16443.47},{"k":"Outbound","s":45,"a":2555114.0,"g":272085.92},{"k":"Service","s":7,"a":548969.0,"g":42017.42},{"k":"Showroom","s":12,"a":707684.0,"g":91077.82}],"ls":[{"k":"Auto Alert Marquesina","s":1,"a":57928.0,"g":1667.57},{"k":"Auto Alert Outbound","s":4,"a":193673.0,"g":15863.41},{"k":"CHRYSLER FB MESSENGER","s":3,"a":140473.0,"g":10610.87},{"k":"CHRYSLER:PR-Facebook Lead","s":1,"a":37621.0,"g":6866.05},{"k":"Dealer Inspire/Contactanos","s":1,"a":21991.0,"g":3899.26},{"k":"DealerInspire - Get ePrice","s":1,"a":34991.0,"g":5958.0},{"k":"Dealership Website:DealerInspire - Get ePrice","s":2,"a":111231.0,"g":11479.3},{"k":"Drive by location","s":1,"a":52745.0,"g":7866.36},{"k":"EVENTO","s":1,"a":66495.0,"g":14131.38},{"k":"Facebook","s":13,"a":809016.0,"g":74815.3},{"k":"INSTAGRAM FORM ACC","s":1,"a":60991.0,"g":5038.72},{"k":"Internet/Website","s":4,"a":219481.0,"g":19652.43},{"k":"LGG:Chrysler - Text","s":1,"a":59584.0,"g":5746.9},{"k":"LGG:Facebook Chrysler Calls","s":4,"a":239477.0,"g":23157.46},{"k":"Lives Locally","s":7,"a":415949.0,"g":62481.95},{"k":"No Lead Source","s":2,"a":186991.0,"g":16443.47},{"k":"PR - FCA Google Leads","s":1,"a":70250.0,"g":6594.65},{"k":"Publicidad Vendedor","s":42,"a":2340534.0,"g":255707.74},{"k":"Referido","s":1,"a":66991.0,"g":4703.63},{"k":"Referido Fabricante/Corporativo","s":2,"a":93274.0,"g":1590.2},{"k":"Service Customer","s":6,"a":491041.0,"g":40349.85},{"k":"Text Blast","s":1,"a":47433.0,"g":10903.52},{"k":"Whatsapp","s":8,"a":399602.0,"g":54673.75}],"nu":{"N":{"s":80,"a":5136369.0,"g":504198.26},"U":{"s":28,"a":1081393.0,"g":156003.51}},"sp":[{"name":"Cordero, Jahaira","s":10,"a":554920.0,"g":74843.16},{"name":"Serrano, Carlos","s":12,"a":774745.0,"g":74472.49},{"name":"Quinones, Brenda L.","s":8,"a":447688.0,"g":51398.11},{"name":"Torres, Felix","s":6,"a":370588.0,"g":50354.73},{"name":"Rojas Medina, Cesar","s":6,"a":225196.0,"g":44822.91}]},"Mas SJ":{"total_sales":31,"total_amount":1362621.5,"total_gross":204428.21,"total_fi":34410.85,"total_fe":170017.36,"lt":[{"k":"Inbound","s":12,"a":478304.0,"g":83214.38},{"k":"Internet","s":3,"a":92941.5,"g":21391.15},{"k":"No Lead Type","s":3,"a":167495.0,"g":2473.31},{"k":"Outbound","s":10,"a":523371.0,"g":76901.43},{"k":"Showroom","s":3,"a":100510.0,"g":20447.94}],"ls":[{"k":"Autocentro M\u00c3\u0081S / Trade In","s":1,"a":21446.5,"g":5674.69},{"k":"Autocentro M\u00c3\u0081S / Video Tour","s":1,"a":39995.0,"g":12307.0},{"k":"Clasif Online","s":2,"a":81304.0,"g":6897.04},{"k":"Facebook","s":7,"a":273898.0,"g":44935.88},{"k":"INSTAGRAM FORM AC+SJ","s":1,"a":31500.0,"g":3409.46},{"k":"Internet/Website","s":1,"a":79995.0,"g":13285.54},{"k":"No Lead Source","s":3,"a":167495.0,"g":2473.31},{"k":"Publicidad Vendedor","s":10,"a":378067.0,"g":71814.54},{"k":"Referido","s":1,"a":112995.0,"g":15731.62},{"k":"Referido Fabricante/Corporativo","s":1,"a":74520.0,"g":7123.62},{"k":"Whatsapp","s":3,"a":101406.0,"g":20775.51}],"nu":{"U":{"s":31,"a":1362621.5,"g":204428.21}},"sp":[{"name":"Hidalgo Negron, Tylee","s":8,"a":399006.0,"g":55917.61},{"name":"Mangual Lasanta, Emmanuel","s":5,"a":252810.0,"g":41475.95},{"name":"Colon Morales, Edgardo","s":4,"a":173440.5,"g":25026.23},{"name":"Santiago Rodriguez, Melvin","s":2,"a":68455.0,"g":22995.83},{"name":"Sosa, Andres","s":2,"a":72990.0,"g":18531.0}]},"Mas Guaynabo":{"total_sales":28,"total_amount":1236653.0,"total_gross":206670.38,"total_fi":29466.98,"total_fe":177203.4,"lt":[{"k":"Inbound","s":12,"a":566124.0,"g":77125.45},{"k":"Internet","s":1,"a":69995.0,"g":13902.24},{"k":"No Lead Type","s":1,"a":5050.0,"g":470.0},{"k":"Outbound","s":13,"a":565489.0,"g":104688.72},{"k":"Showroom","s":1,"a":29995.0,"g":10483.97}],"ls":[{"k":"FB MESSENGER AC+ GUAYNABO","s":1,"a":69995.0,"g":13902.24},{"k":"Facebook","s":4,"a":185486.0,"g":43727.39},{"k":"Internet/Website","s":1,"a":29425.0,"g":3982.9},{"k":"No Lead Source","s":11,"a":490290.0,"g":65207.38},{"k":"Publicidad Vendedor","s":11,"a":461457.0,"g":79850.47}],"nu":{"U":{"s":28,"a":1236653.0,"g":206670.38}},"sp":[{"name":"Gilbes Rivera, Alina","s":6,"a":268309.0,"g":49570.42},{"name":"Salazar Castro, Rodrigo","s":6,"a":241990.0,"g":44900.09},{"name":"Figueroa Otero, Kris","s":6,"a":181845.0,"g":38698.59},{"name":"Rivas Suarez, Miguel","s":3,"a":136474.0,"g":25393.79},{"name":"Tirado Santiago, Rafael","s":3,"a":213985.0,"g":23261.38}]},"Nissan":{"total_sales":62,"total_amount":2044149.0,"total_gross":315658.63,"total_fi":99972.22,"total_fe":215686.41,"lt":[{"k":"Inbound","s":13,"a":452162.0,"g":58097.36},{"k":"Internet","s":6,"a":218800.0,"g":31162.96},{"k":"No Lead Type","s":1,"a":25700.0,"g":4115.65},{"k":"Outbound","s":34,"a":1058790.0,"g":175367.72},{"k":"Service","s":1,"a":55995.0,"g":6192.92},{"k":"Showroom","s":7,"a":232702.0,"g":40722.02}],"ls":[{"k":"Autocentro Nissan / Contacto","s":1,"a":36995.0,"g":4571.02},{"k":"Clasif Online","s":5,"a":186838.0,"g":27334.29},{"k":"Email Blast/Compramos tu Auto","s":4,"a":138980.0,"g":22936.89},{"k":"Facebook","s":23,"a":684038.0,"g":100625.57},{"k":"LGG:sakari","s":1,"a":37995.0,"g":5281.22},{"k":"NISSAN FB MESSENGER","s":1,"a":36995.0,"g":3112.78},{"k":"No Lead Source","s":1,"a":25700.0,"g":4115.65},{"k":"Radio","s":1,"a":55500.0,"g":4937.4},{"k":"Referido Fabricante/Corporativo","s":1,"a":43500.0,"g":2618.68},{"k":"Service","s":5,"a":172275.0,"g":27129.25},{"k":"Solicita tu Oferta","s":1,"a":19825.0,"g":5304.18},{"k":"TEXTO SAKARI NISSAN","s":2,"a":86990.0,"g":12893.76},{"k":"TV","s":2,"a":74990.0,"g":9512.98},{"k":"Whatsapp","s":14,"a":443528.0,"g":85284.96}],"nu":{"U":{"s":28,"a":679325.0,"g":137048.91},"N":{"s":34,"a":1364824.0,"g":178609.72}},"sp":[{"name":"Melendez Torres, Gabriel","s":13,"a":405816.0,"g":61370.62},{"name":"Rivera Droz, Edgardo","s":9,"a":264022.0,"g":59667.6},{"name":"Miranda, Crismarie","s":12,"a":436755.0,"g":57720.0},{"name":"Rohena Lopez, Jonathan","s":8,"a":330275.0,"g":38504.8},{"name":"Nieves Viruet, Edgardo","s":8,"a":244473.0,"g":35204.1}]},"Toyota":{"total_sales":323,"total_amount":13447505.37,"total_gross":1852432.51,"total_fi":624739.95,"total_fe":1227692.56,"lt":[{"k":"Appraisal","s":1,"a":4080.0,"g":-155.0},{"k":"Inbound","s":81,"a":3220543.0,"g":437568.95},{"k":"Internet","s":30,"a":1245868.29,"g":163256.14},{"k":"No Lead Type","s":11,"a":359319.08,"g":24626.2},{"k":"Outbound","s":109,"a":4638306.0,"g":648364.47},{"k":"Service","s":6,"a":253777.0,"g":33572.11},{"k":"Showroom","s":85,"a":3725612.0,"g":545199.64}],"ls":[{"k":"Auto Alert Inbound","s":7,"a":343030.0,"g":35705.06},{"k":"Auto Alert Marquesina","s":3,"a":115490.0,"g":17819.57},{"k":"Auto Alert Outbound","s":37,"a":1608068.0,"g":234689.0},{"k":"Autoalert: Auto Alert Inbound","s":3,"a":135720.0,"g":15817.8},{"k":"Autoalert: Auto Alert Outbound","s":4,"a":191373.0,"g":24585.26},{"k":"Autocentro Toyota / Contacto","s":1,"a":64000.0,"g":6765.0},{"k":"Autocentro Toyota / Financiamiento","s":2,"a":63495.0,"g":9101.69},{"k":"Autocentro Toyota / Ofertas","s":1,"a":42047.0,"g":4986.43},{"k":"Clasif Online","s":11,"a":385255.0,"g":50299.18},{"k":"EVENTO","s":2,"a":82990.0,"g":21497.88},{"k":"Facebook","s":108,"a":4473555.0,"g":619969.9},{"k":"INSTAGRAM FORM ACT","s":2,"a":94550.0,"g":6821.03},{"k":"Instagram","s":2,"a":87995.0,"g":4755.87},{"k":"Internet/Website","s":34,"a":1438302.0,"g":211378.07},{"k":"LEAD FACEBOOK | TOYOTA","s":1,"a":58000.0,"g":4459.19},{"k":"LGG: Google Ads","s":1,"a":35995.0,"g":10895.07},{"k":"LGG:Google Ads","s":1,"a":44995.0,"g":7015.35},{"k":"No Lead Source","s":11,"a":359319.08,"g":24626.2},{"k":"Periodico","s":5,"a":219475.0,"g":42726.97},{"k":"Podium","s":1,"a":25995.0,"g":1980.14},{"k":"Podium - Parts","s":1,"a":28700.0,"g":3548.96},{"k":"Podium-Webchat","s":2,"a":87785.0,"g":12620.19},{"k":"Publicidad Vendedor","s":7,"a":352033.0,"g":36659.99},{"k":"Radio","s":5,"a":210980.0,"g":24335.07},{"k":"Referido","s":2,"a":90695.0,"g":11306.27},{"k":"Referido Fabricante/Corporativo","s":5,"a":223955.0,"g":27993.0},{"k":"Referido Vendedor","s":1,"a":61495.0,"g":6500.78},{"k":"Repeat","s":3,"a":161880.0,"g":18779.69},{"k":"Repeat Customer","s":1,"a":40000.0,"g":4146.0},{"k":"Service","s":5,"a":199560.0,"g":37300.51},{"k":"TEXTO SAKARI TOYOTA","s":2,"a":89930.0,"g":8405.0},{"k":"TOYOTA FB MESSENGER","s":7,"a":284140.29,"g":35226.48},{"k":"Text Blast","s":2,"a":82990.0,"g":16282.0},{"k":"ToyotaPR.com-Contact a Dealer - RAV4 2026 Event","s":1,"a":54995.0,"g":7990.77},{"k":"ToyotaPR.com-Contact a Dealer - TdPR Contact a Dealer Vehicle section","s":1,"a":45715.0,"g":3222.05},{"k":"Whatsapp","s":35,"a":1332682.0,"g":210879.99},{"k":"podium","s":6,"a":230321.0,"g":31341.1}],"nu":{"N":{"s":248,"a":11083704.29,"g":1511952.94},"U":{"s":75,"a":2363801.08,"g":340479.57}},"sp":[{"name":"Volckers, Carlos","s":16,"a":737464.0,"g":117780.84},{"name":"Torres, Ruben","s":19,"a":831803.0,"g":116963.82},{"name":"Nepomuceno, Jose","s":17,"a":829149.0,"g":110977.32},{"name":"Redon, Manuel","s":15,"a":738022.0,"g":104084.54},{"name":"Sepulveda Lugo, Luis","s":14,"a":553365.0,"g":101245.44}]}}},"salespeople":[{"dealer":"Toyota","name":"De Soto, Luis","s":76,"a":3395763.9,"g":453715.89,"avg":5969.95},{"dealer":"Toyota","name":"Redon, Manuel","s":77,"a":3273438.0,"g":434940.16,"avg":5648.57},{"dealer":"Chrysler","name":"Serrano, Carlos","s":70,"a":4203800.0,"g":429954.35,"avg":6142.2},{"dealer":"Toyota","name":"Cruz, Ivelisse","s":85,"a":3408566.0,"g":416853.23,"avg":4904.16},{"dealer":"Toyota","name":"Lopez Sasso, Angel","s":77,"a":2688633.0,"g":415406.46,"avg":5394.89},{"dealer":"Toyota","name":"Torres, Ruben","s":70,"a":2904997.0,"g":412529.86,"avg":5893.28},{"dealer":"Toyota","name":"Volckers, Carlos","s":62,"a":2632909.0,"g":408481.72,"avg":6588.41},{"dealer":"Toyota","name":"Lopez Cortes, Giovanny","s":76,"a":3978792.0,"g":385036.18,"avg":5066.27},{"dealer":"Toyota","name":"Nepomuceno, Jose","s":60,"a":2613780.0,"g":359550.59,"avg":5992.51},{"dealer":"Toyota","name":"Zegarra, Diana","s":47,"a":2111476.0,"g":306098.04,"avg":6512.72},{"dealer":"Toyota","name":"Rivera Cruz, Edgardo","s":45,"a":2128128.0,"g":302028.59,"avg":6711.75},{"dealer":"Toyota","name":"Banchs, Zuleimy","s":49,"a":2342804.0,"g":296925.33,"avg":6059.7},{"dealer":"Toyota","name":"Gonzalez Lopez, Roberto","s":47,"a":2000870.0,"g":277215.03,"avg":5898.19},{"dealer":"Toyota","name":"Laboy Ramos, Javier","s":53,"a":2081537.0,"g":273889.69,"avg":5167.73},{"dealer":"Toyota","name":"Torres, William","s":49,"a":2075264.0,"g":266069.02,"avg":5429.98},{"dealer":"Toyota","name":"Sepulveda, Luis","s":45,"a":1748756.0,"g":257071.86,"avg":5712.71},{"dealer":"Toyota","name":"Torres, Rafael","s":42,"a":1955286.0,"g":252402.56,"avg":6009.58},{"dealer":"Toyota","name":"Marrero, Joel","s":46,"a":1928947.0,"g":250914.92,"avg":5454.67},{"dealer":"Chrysler","name":"Quinones, Brenda L.","s":54,"a":2779357.0,"g":235282.24,"avg":4357.08},{"dealer":"Toyota","name":"Vazquez, Pedro","s":40,"a":1759751.0,"g":231872.48,"avg":5796.81},{"dealer":"Nissan","name":"Melendez, Gabriel","s":49,"a":1281090.0,"g":230772.33,"avg":4709.64},{"dealer":"Toyota","name":"Mateo, Luis","s":52,"a":1908337.0,"g":230659.68,"avg":4435.76},{"dealer":"Toyota","name":"Rodriguez Donatiu, Paola","s":35,"a":1608351.0,"g":227638.25,"avg":6503.95},{"dealer":"Toyota","name":"Crespo Rivera, Cristian","s":49,"a":1898122.0,"g":227212.78,"avg":4637.0},{"dealer":"Toyota","name":"Lopez Sola, Karen","s":44,"a":1805324.0,"g":227060.02,"avg":5160.45}]};
+
+const NT={"Nissan": {"2026-01": {"total_sales": 58, "total_leads": 884, "lt": {"Inbound": 13, "Internet": 8, "Outbound": 29, "Showroom": 8}, "ls": {"Clasif Online": 1, "Email Blast/Compramos tu Auto": 2, "FORMULARIO INST | FACEBOOK": 2, "Facebook": 9, "Instagram": 1, "Internet/Website": 4, "LGG:sakari": 2, "NISSAN FB MESSENGER": 1, "Publicidad Vendedor": 12, "Referido Fabricante/Corporativo": 8, "Service": 3, "TEXTO SAKARI NISSAN": 1, "Whatsapp": 10}, "lsc": {"Calls": 3, "Dealer": 50, "e-Commerce": 5}, "sp": [{"name": "Melendez, Gabriel", "s": 14}, {"name": "Martinez Collazo, Erich J", "s": 9}, {"name": "Nieves, Edgardo", "s": 9}, {"name": "Pagan Mendoza, Jessica", "s": 8}, {"name": "Gonzalez, Gilberto", "s": 5}, {"name": "Rohena Lopez, Jonathan", "s": 3}, {"name": "Rodriguez, Felix", "s": 3}, {"name": "Rivera Droz, Edgardo", "s": 2}]}, "2026-02": {"total_sales": 62, "total_leads": 1023, "lt": {"Inbound": 19, "Internet": 10, "Outbound": 30, "Showroom": 3}, "ls": {"Clasif Online": 3, "Facebook": 15, "Internet/Website": 2, "NISSAN FB MESSENGER": 1, "Publicidad Vendedor": 15, "Referido Fabricante/Corporativo": 3, "Service": 3, "TEXTO SAKARI NISSAN": 6, "Whatsapp": 8}, "lsc": {"Calls": 2, "Dealer": 52, "e-Commerce": 8}, "sp": [{"name": "Rohena Lopez, Jonathan", "s": 14}, {"name": "Nieves, Edgardo", "s": 9}, {"name": "Melendez, Gabriel", "s": 8}, {"name": "Pagan Mendoza, Jessica", "s": 7}, {"name": "Martinez Collazo, Erich J", "s": 6}, {"name": "Miranda, Crismarie", "s": 6}, {"name": "Gonzalez, Gilberto", "s": 4}]}, "2026-03": {"total_sales": 83, "total_leads": 874, "lt": {"Inbound": 16, "Internet": 8, "Outbound": 51, "Service": 1, "Showroom": 7}, "ls": {"EVENTO": 1, "Email Blast/Compramos tu Auto": 3, "Facebook": 8, "Internet/Website": 3, "Publicidad Vendedor": 23, "Referido Fabricante/Corporativo": 2, "Service": 12, "TEXTO SAKARI NISSAN": 5, "Whatsapp": 18}, "lsc": {"Dealer": 74, "Dealership WebSite": 1, "e-Commerce": 8}, "sp": [{"name": "Melendez, Gabriel", "s": 17}, {"name": "Rohena Lopez, Jonathan", "s": 14}, {"name": "Martinez Collazo, Erich J", "s": 12}, {"name": "Miranda, Crismarie", "s": 11}, {"name": "Nieves, Edgardo", "s": 7}, {"name": "Pagan Mendoza, Jessica", "s": 7}, {"name": "Gonzalez, Gilberto", "s": 6}]}, "2026-04": {"total_sales": 37, "total_leads": 682, "lt": {"Inbound": 5, "Internet": 4, "Outbound": 24, "Showroom": 4}, "ls": {"Clasif Online": 2, "Email Blast/Compramos tu Auto": 3, "Facebook": 7, "Internet/Website": 1, "Publicidad Vendedor": 9, "Referido Fabricante/Corporativo": 2, "Service": 3, "Whatsapp": 5}, "lsc": {"Calls": 1, "Dealer": 33, "e-Commerce": 3}, "sp": [{"name": "Melendez, Gabriel", "s": 8}, {"name": "Miranda, Crismarie", "s": 5}, {"name": "Gonzalez, Gilberto", "s": 4}, {"name": "Martinez Collazo, Erich J", "s": 3}, {"name": "Rohena Lopez, Jonathan", "s": 3}, {"name": "Nieves, Edgardo", "s": 3}]}, "2026-05": {"total_sales": 47, "total_leads": 851, "lt": {"Inbound": 11, "Internet": 2, "Outbound": 26, "Service": 1, "Showroom": 7}, "ls": {"Billboard": 1, "Clasif Online": 3, "Email Blast/Compramos tu Auto": 4, "Facebook": 16, "Radio": 1, "Service": 4, "Whatsapp": 13}, "lsc": {"Dealer": 45, "Dealership WebSite": 1, "e-Commerce": 1}, "sp": [{"name": "Melendez, Gabriel", "s": 9}, {"name": "Miranda, Crismarie", "s": 8}, {"name": "Rohena Lopez, Jonathan", "s": 8}, {"name": "Nieves, Edgardo", "s": 8}, {"name": "Rivera Droz, Edgardo", "s": 6}, {"name": "Gonzalez, Gilberto", "s": 3}]}}, "Toyota": {"2026-01": {"total_sales": 298, "total_leads": 3008, "lt": {"Inbound": 79, "Internet": 19, "Outbound": 97, "Service": 12, "Showroom": 89}, "ls": {"Auto Alert Inbound": 10, "Auto Alert Outbound": 30, "Autocentro Toyota": 5, "Facebook": 56, "Internet/Website": 34, "LEAD FACEBOOK | TOYOTA": 10, "Publicidad Vendedor": 75, "Radio": 4, "Referido Fabricante/Corporativo": 44, "Whatsapp": 5}, "lsc": {"Autoalert": 44, "Calls": 1, "Dealer": 232, "Dealership Website": 5, "e-Commerce": 13}, "sp": [{"name": "Lopez, Angel", "s": 18}, {"name": "Sepulveda, Luis", "s": 18}, {"name": "Cruz, Ivelisse", "s": 17}, {"name": "Santiago Luna, Rosalyn", "s": 14}, {"name": "Rivera, Edgardo", "s": 14}, {"name": "Redon, Manuel", "s": 13}, {"name": "De Soto, Luis", "s": 12}, {"name": "Menendez, Ismael", "s": 12}, {"name": "Lopez, Giovanny", "s": 12}, {"name": "Laboy Ramos, Javier", "s": 12}]}, "2026-02": {"total_sales": 273, "total_leads": 2357, "lt": {"Inbound": 77, "Internet": 13, "Outbound": 99, "Service": 1, "Showroom": 82}, "ls": {"Auto Alert Inbound": 6, "Auto Alert Outbound": 27, "Facebook": 83, "Internet/Website": 33, "LEAD FACEBOOK | TOYOTA": 5, "Publicidad Vendedor": 60, "Referido Fabricante/Corporativo": 30, "Whatsapp": 4}, "lsc": {"Autoalert": 35, "Calls": 1, "Dealer": 224, "Dealership Website": 1, "Parts/Service": 1, "e-Commerce": 10}, "sp": [{"name": "Cruz, Ivelisse", "s": 14}, {"name": "Lopez, Angel", "s": 14}, {"name": "Oppenheimer, Louis", "s": 13}, {"name": "Torres, William", "s": 12}, {"name": "Redon, Manuel", "s": 12}, {"name": "Rivera, Edgardo", "s": 11}, {"name": "Sepulveda, Luis", "s": 11}, {"name": "De Soto, Luis", "s": 11}]}, "2026-03": {"total_sales": 291, "total_leads": 2614, "lt": {"Inbound": 98, "Internet": 30, "Outbound": 86, "Showroom": 77}, "ls": {"Auto Alert Outbound": 18, "EVENTO": 4, "Facebook": 53, "Internet/Website": 32, "Publicidad Vendedor": 65, "Referido Fabricante/Corporativo": 56, "TOYOTA FB MESSENGER": 14, "Whatsapp": 20}, "lsc": {"Autoalert": 24, "Calls": 1, "Dealer": 237, "Dealership Website": 5, "Parts/Service": 1, "TOYOTA": 2, "e-Commerce": 21}, "sp": [{"name": "Cruz, Ivelisse", "s": 20}, {"name": "Redon, Manuel", "s": 16}, {"name": "Lopez, Giovanny", "s": 16}, {"name": "Torres, Ruben", "s": 14}, {"name": "De Soto, Luis", "s": 13}, {"name": "Mateo, Luis", "s": 13}, {"name": "Sepulveda, Luis", "s": 13}]}, "2026-04": {"total_sales": 252, "total_leads": 2225, "lt": {"Inbound": 80, "Internet": 23, "Outbound": 80, "Showroom": 69}, "ls": {"Auto Alert Inbound": 8, "Auto Alert Outbound": 21, "Clasif Online": 9, "Facebook": 63, "Internet/Website": 24, "Publicidad Vendedor": 42, "Referido Fabricante/Corporativo": 39, "TOYOTA FB MESSENGER": 10, "Whatsapp": 14}, "lsc": {"Autoalert": 29, "Calls": 1, "Dealer": 200, "Dealership Website": 8, "e-Commerce": 14}, "sp": [{"name": "Lopez, Angel", "s": 17}, {"name": "Volckers, Carlos", "s": 15}, {"name": "Lopez, Giovanny", "s": 13}, {"name": "Rivera, Edgardo", "s": 13}, {"name": "Redon, Manuel", "s": 11}, {"name": "Mateo, Luis", "s": 11}, {"name": "De Soto, Luis", "s": 10}, {"name": "Laboy Ramos, Javier", "s": 10}]}, "2026-05": {"total_sales": 222, "total_leads": 2315, "lt": {"Appraisal": 1, "Inbound": 59, "Internet": 11, "Outbound": 79, "Showroom": 72}, "ls": {"Auto Alert Inbound": 7, "Auto Alert Outbound": 23, "Clasif Online": 8, "Facebook": 92, "INSTAGRAM FORM ACT": 3, "Internet/Website": 30, "Periodico": 5, "Radio": 4, "Whatsapp": 33}, "lsc": {"Autoalert": 31, "Dealer": 180, "Dealership Website": 1, "Parts/Service": 1, "e-Commerce": 9}, "sp": [{"name": "Torres, Ruben", "s": 16}, {"name": "Lopez, Angel", "s": 13}, {"name": "Nepomuceno, Jose", "s": 12}, {"name": "Cruz, Ivelisse", "s": 11}, {"name": "Sepulveda, Luis", "s": 10}, {"name": "Lopez, Giovanny", "s": 9}, {"name": "Redon, Manuel", "s": 9}, {"name": "Laboy Ramos, Javier", "s": 8}]}}};
+
+const DAYS={"dealer_avg":{"Chrysler":102.3,"Mas SJ":15.8,"Mas Guaynabo":47.2,"Nissan":10.0,"Toyota":61.5},"monthly":{"2026-01":{"Chrysler":140.2,"Mas SJ":12.7,"Mas Guaynabo":27.2,"Nissan":10.1,"Toyota":48.3},"2026-02":{"Chrysler":115.5,"Mas SJ":12.4,"Mas Guaynabo":39.8,"Nissan":11.3,"Toyota":52.6},"2026-03":{"Chrysler":93.6,"Mas SJ":13.8,"Mas Guaynabo":63.0,"Nissan":10.0,"Toyota":67.2},"2026-04":{"Chrysler":99.9,"Mas SJ":21.0,"Mas Guaynabo":65.5,"Nissan":8.3,"Toyota":63.8},"2026-05":{"Chrysler":65.5,"Mas SJ":20.2,"Mas Guaynabo":30.6,"Nissan":10.3,"Toyota":74.3}},"lt":{"Outbound":{"avg":59.0,"c":593},"Inbound":{"avg":51.0,"c":488},"Showroom":{"avg":53.4,"c":208},"Internet":{"avg":72.3,"c":205},"Service":{"avg":212.9,"c":43},"Appraisal":{"avg":356.0,"c":1}},"ls":{"Referido":{"avg":325.8,"c":28},"Facebook":{"avg":45.6,"c":296},"Auto Alert Marquesina":{"avg":56.0,"c":6},"CHRYSLER FB MESSENGER":{"avg":107.2,"c":12},"Whatsapp":{"avg":28.7,"c":110},"Lives Locally":{"avg":8.5,"c":22},"Service Customer":{"avg":317.1,"c":19},"Publicidad Vendedor":{"avg":16.3,"c":334},"Referido Fabricante/Corporativo":{"avg":13.2,"c":105},"DS *RevTeam-CompramosTu":{"avg":569.7,"c":3},"DS *Drive By/Location":{"avg":562.0,"c":1},"Clasificados Online vendedor":{"avg":270.5,"c":2},"Clasif Online":{"avg":34.1,"c":45},"LGG:Chrysler - Text":{"avg":265.8,"c":4},"Procura por Vendedor":{"avg":137.0,"c":1},"Auto Alert Inbound":{"avg":138.0,"c":27},"Drive by location":{"avg":359.5,"c":6},"Text Blast":{"avg":132.6,"c":15},"PR - FCA Google Leads":{"avg":66.7,"c":3},"PR - Facebook lead":{"avg":10.0,"c":1},"Auto Alert Outbound":{"avg":120.9,"c":134},"LGG:Facebook Chrysler Calls":{"avg":181.1,"c":9},"Internet/Website":{"avg":17.4,"c":71},"DS *Dealer Website":{"avg":538.0,"c":1},"DealerInspire - Get ePrice":{"avg":1.5,"c":2},"Periodico":{"avg":2.0,"c":6},"Dealer Inspire/Contact Us":{"avg":2.0,"c":1},"Lead Facebook Chrysler":{"avg":115.0,"c":1},"Email Blast/Compramos tu Auto":{"avg":17.2,"c":14},"DS *Referral":{"avg":554.0,"c":1},"DS *Facebook":{"avg":555.0,"c":1},"OFERTAS CHRYSLER":{"avg":23.0,"c":1},"DS CHRYSLER FB MESSENGE":{"avg":589.0,"c":1},"Repetido":{"avg":287.5,"c":2},"Instagram":{"avg":3.8,"c":5},"EVENTO":{"avg":16.6,"c":11},"LGG:Texto Sakari":{"avg":123.7,"c":3},"Dealer Inspire/Contactanos":{"avg":0.0,"c":1},"AC+ FB MESSENGER":{"avg":15.2,"c":9},"TEXTO SAKARI AC+ SJ":{"avg":103.0,"c":1},"Autocentro M\u00c3\u0081S":{"avg":75.0,"c":1},"Autocentro M\u00c3\u0081S / Trade In":{"avg":30.5,"c":2},"LGG:Clasificados Online Mas SJ":{"avg":6.0,"c":1},"INSTAGRAM FORM AC+SJ":{"avg":4.0,"c":1},"Autocentro M\u00c3\u0081S / Video Tour":{"avg":2.0,"c":1},"FB MESSENGER AC+ GUAYNABO":{"avg":134.5,"c":4},"No Lead Source":{"avg":30.5,"c":21},"LGG:Autocentro Mas-Mu\u00f1oz Rivera":{"avg":1.0,"c":1},"FORMULARIO INST | FACEBOOK":{"avg":15.5,"c":4},"NISSAN FB MESSENGER":{"avg":19.4,"c":5},"Service":{"avg":38.2,"c":17},"LGG:sakari":{"avg":14.8,"c":4},"TEXTO SAKARI NISSAN":{"avg":26.4,"c":10},"TV":{"avg":3.3,"c":3},"Solicita tu Oferta":{"avg":8.0,"c":1},"Radio":{"avg":1.0,"c":4},"Autocentro Nissan / Contacto":{"avg":2.0,"c":1},"Autocentro Toyota":{"avg":34.9,"c":7},"LEAD FACEBOOK | TOYOTA":{"avg":27.0,"c":22},"TOYOTA TIKTOK LEAD":{"avg":23.0,"c":1},"TOYOTA FB MESSENGER":{"avg":85.7,"c":41},"Referido Vendedor":{"avg":168.0,"c":3},"TEXTO SAKARI TOYOTA":{"avg":238.5,"c":6},"Compra Confiado":{"avg":220.0,"c":2},"Repeat":{"avg":301.0,"c":20},"Procura por vendedor":{"avg":240.0,"c":2},"Website":{"avg":372.0,"c":1},"LGG:Prof Angel Rosa":{"avg":21.0,"c":1},"Repeat Customer":{"avg":112.2,"c":5},"Walk-In":{"avg":260.0,"c":2},"Autocentro Toyota / Contacto":{"avg":11.8,"c":6},"Mantenimiento Expreso Form":{"avg":28.0,"c":1},"Autocentro Toyota / \u00c2\u00a1Av\u00c3\u00adsame si el precio baja!":{"avg":12.0,"c":2},"ToyotaPR.com-Contact a Dealer - RAV4 2026 Event":{"avg":14.0,"c":1},"Autocentro Toyota / Ofertas":{"avg":6.0,"c":2},"Auto Centro / Disponibilidad":{"avg":0.0,"c":1},"Podium - Parts":{"avg":17.0,"c":2},"Autocentro Toyota / Financiamiento":{"avg":26.0,"c":2},"Podium-Webchat":{"avg":7.5,"c":2},"LGG:Google Ads":{"avg":332.0,"c":1},"INSTAGRAM FORM ACT":{"avg":1.0,"c":2},"podium":{"avg":43.7,"c":6},"ToyotaPR.com-Contact a Dealer - TdPR Contact a Dealer Vehicle section":{"avg":54.0,"c":1}},"global_avg":61.9};
+// ─── CONFIG ──────────────────────────────────────────────────────────────────
+const MO=['2026-01','2026-02','2026-03','2026-04','2026-05'];
+const MN={'2026-01':'Ene','2026-02':'Feb','2026-03':'Mar','2026-04':'Abr','2026-05':'May'};
+const ALL=['Chrysler','Mas SJ','Mas Guaynabo','Nissan','Toyota'];
+const FR=['Chrysler','Mas SJ','Mas Guaynabo','Nissan','Toyota'];
+const DC={'Chrysler':'#4e9de0','Mas SJ':'#2ecc8f','Mas Guaynabo':'#f5923a','Nissan':'#c97ee8','Toyota':'#f5c842'};
+const LTCOL={'Inbound':'#4e9de0','Outbound':'#2ecc8f','Internet':'#c97ee8','Showroom':'#f5c842','Service':'#f5923a','No Lead Type':'#4a5468','Appraisal':'#e05c5c','Parts':'#6ee7b7','Lease Retention':'#a78bfa'};
+
+let sM='all',sD='all',sLT='all',ltM='sales',lsM='sales',gmM='line',spS='g';
+const CH={};
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+const fK=v=>{const a=Math.abs(v);return(v<0?'-':'')+(a>=1e6?'$'+(a/1e6).toFixed(2)+'M':a>=1e3?'$'+(a/1e3).toFixed(0)+'K':'$'+Math.round(a));};
+const fC=v=>'$'+Math.round(v).toLocaleString('en-US');
+const fN=v=>Math.round(v).toLocaleString('en-US');
+const pct=(a,t)=>t>0?((a/t)*100).toFixed(1)+'%':'0%';
+const gMo=()=>sM==='all'?MO:[sM];
+const gDl=()=>sD==='all'?ALL:[sD];
+const gFR=()=>gDl().filter(d=>FR.includes(d));
+const kill=id=>{if(CH[id]){CH[id].destroy();delete CH[id];}};
+
+function leg(id,items){
+  document.getElementById(id).innerHTML=items.map(i=>`<span class="li"><span class="ld" style="background:${i.c}"></span>${i.l}</span>`).join('');
+}
+
+// aggregate per-dealer across selected months
+function agg(){
+  const ms=gMo(),ds=gDl(),r={};
+  ms.forEach(m=>ds.forEach(d=>{
+    const x=D.monthly[m]&&D.monthly[m][d];if(!x)return;
+    if(!r[d])r[d]={s:0,a:0,g:0,fi:0,fe:0,lt:{},ls:{},nu:{}};
+    // if LT filter active, only count matching entries
+    const ltFilter=sLT!=='all';
+    const ltRows=ltFilter?x.lt.filter(t=>t.k===sLT):x.lt;
+    if(!ltFilter){
+      r[d].s+=x.total_sales;r[d].a+=x.total_amount;r[d].g+=x.total_gross;r[d].fi+=x.total_fi;r[d].fe+=x.total_fe;
+    } else {
+      ltRows.forEach(t=>{
+        r[d].s+=t.s;r[d].a+=t.a;r[d].g+=t.g;
+        // proportional FI/FE based on gross ratio
+        const ratio=x.total_gross>0?t.g/x.total_gross:0;
+        r[d].fi+=x.total_fi*ratio;r[d].fe+=x.total_fe*ratio;
+      });
+    }
+    x.lt.forEach(t=>{if(!r[d].lt[t.k])r[d].lt[t.k]={s:0,a:0,g:0};r[d].lt[t.k].s+=t.s;r[d].lt[t.k].a+=t.a;r[d].lt[t.k].g+=t.g;});
+    // filter ls by active LT if needed
+    if(!ltFilter){
+      x.ls.forEach(t=>{if(!r[d].ls[t.k])r[d].ls[t.k]={s:0,a:0,g:0};r[d].ls[t.k].s+=t.s;r[d].ls[t.k].a+=t.a;r[d].ls[t.k].g+=t.g;});
+    } else {
+      // approximate: show ls for that LT only if available (use lt-level data is aggregated; fallback to full ls weighted)
+      x.ls.forEach(t=>{if(!r[d].ls[t.k])r[d].ls[t.k]={s:0,a:0,g:0};r[d].ls[t.k].s+=t.s;r[d].ls[t.k].a+=t.a;r[d].ls[t.k].g+=t.g;});
+    }
+    Object.entries(x.nu).forEach(([k,v])=>{if(!r[d].nu[k])r[d].nu[k]={s:0,a:0,g:0};r[d].nu[k].s+=v.s;r[d].nu[k].a+=v.a;r[d].nu[k].g+=v.g;});
+  }));
+  return r;
+}
+
+// ─── KPIs ────────────────────────────────────────────────────────────────────
+function bKPI(){
+  const a=agg(),ds=gDl();
+  let ts=0,ta=0,tg=0,tfi=0,tfe=0;
+  ds.forEach(d=>{if(!a[d])return;ts+=a[d].s;ta+=a[d].a;tg+=a[d].g;tfi+=a[d].fi;tfe+=a[d].fe;});
+  const avg=ts>0?tg/ts:0;
+  const ltSuf=sLT!=='all'?` · ${sLT}`:'';
+  // compute weighted avg days for selected dealers
+  let daysTotal=0,daysCnt=0;
+  ds.forEach(d=>{const ms=gMo();ms.forEach(m=>{const v=DAYS.monthly[m]&&DAYS.monthly[m][d];if(v&&v>0){daysTotal+=v;daysCnt++;}});});
+  const avgDays=daysCnt>0?(daysTotal/daysCnt).toFixed(1):DAYS.global_avg;
+  const items=[
+    {l:'Ventas totales',v:fN(ts),s:'Dealers seleccionados'+ltSuf,hl:false},
+    {l:'Gross total',v:fK(tg),s:'Front End + F&I'+ltSuf,hl:true},
+    {l:'Sale Amount total',v:fK(ta),s:'Monto facturado total'+ltSuf,hl:false},
+    {l:'Avg gross / deal',v:fC(avg),s:'Gross promedio por venta',hl:true},
+    {l:'Avg días prospect→deal',v:avgDays+'d',s:'Promedio prospect creation → deal date',hl:false},
+  ];
+  document.getElementById('kpis').innerHTML=items.map(k=>`<div class="kc${k.hl?' hl':''}"><div class="klbl">${k.l}</div><div class="kval">${k.v}</div><div class="ksub">${k.s}</div></div>`).join('');
+}
+
+// ─── VENTAS POR MES ──────────────────────────────────────────────────────────
+function bVol(){
+  kill('cV');
+  const ms=gMo(),ds=gDl();
+  leg('lv',ds.map(d=>({c:DC[d],l:d})));
+  const stacked=true;
+  CH.cV=new Chart(document.getElementById('cV'),{
+    type:'bar',
+    data:{labels:ms.map(m=>MN[m]),datasets:ds.map(d=>({
+      label:d,data:ms.map(m=>{const x=D.monthly[m]&&D.monthly[m][d];if(!x)return 0;if(sLT==='all')return x.total_sales;const t=x.lt.find(t=>t.k===sLT);return t?t.s:0;}),
+      backgroundColor:DC[d]+'bb',borderColor:DC[d],borderWidth:1,borderRadius:3
+    }))},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fN(c.raw)+' ventas'}}},
+      scales:{x:{stacked,ticks:{autoSkip:false,color:'#8892a4'},grid:{color:'rgba(255,255,255,.04)'}},
+              y:{stacked,ticks:{color:'#8892a4',callback:v=>fN(v)},grid:{color:'rgba(255,255,255,.06)'}}}}
+  });
+}
+
+// ─── LEAD TYPE ───────────────────────────────────────────────────────────────
+function bLT(){
+  kill('cLT');
+  const a=agg(),ds=gDl();
+  const ltA={};
+  ds.forEach(d=>{if(!a[d])return;Object.entries(a[d].lt).forEach(([k,v])=>{if(!ltA[k])ltA[k]={s:0,a:0,g:0};ltA[k].s+=v.s;ltA[k].a+=v.a;ltA[k].g+=v.g;});});
+  const sorted=Object.entries(ltA).sort((x,y)=>y[1][ltM]-x[1][ltM]);
+  const labels=sorted.map(x=>x[0]),vals=sorted.map(x=>x[1][ltM]==='s'?x[1].s:x[1][ltM]);
+  // fix: access by key
+  const getV=(v)=>ltM==='sales'?v.s:ltM==='amount'?v.a:v.g;
+  const sorted2=Object.entries(ltA).sort((x,y)=>getV(y[1])-getV(x[1]));
+  const labels2=sorted2.map(x=>x[0]),vals2=sorted2.map(x=>getV(x[1]));
+  const cols=labels2.map(l=>LTCOL[l]||'#4a5468');
+  const total=vals2.reduce((a,b)=>a+b,0);
+  const lbl=ltM==='sales'?'ventas':ltM==='amount'?'sale amount':'gross';
+  document.getElementById('ltcv').textContent=ltM==='sales'?fN(total):fK(total);
+  document.getElementById('ltcl').textContent=lbl;
+  leg('llt',labels2.map((l,i)=>({c:cols[i],l:`${l} — ${pct(vals2[i],total)}`})));
+  CH.cLT=new Chart(document.getElementById('cLT'),{
+    type:'doughnut',
+    data:{labels:labels2,datasets:[{data:vals2.map(v=>Math.max(0,v)),backgroundColor:cols,borderWidth:0,hoverBorderWidth:2,hoverBorderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.label}: ${ltM==='sales'?fN(c.raw):fK(c.raw)} (${pct(c.raw,total)})`}}}}
+  });
+  const mx=Math.max(...vals2)||1;
+  document.getElementById('ltbars').innerHTML=sorted2.map(([k,v],i)=>{
+    const val=getV(v);
+    return `<div class="brow"><div class="bmeta"><span style="color:${cols[i]};font-weight:600;font-size:10px">${k}</span><span>${ltM==='sales'?fN(val)+' ventas':fK(val)} (${pct(val,total)})</span></div><div class="btrack"><div class="bfill" style="width:${(val/mx*100).toFixed(1)}%;background:${cols[i]}"></div></div></div>`;
+  }).join('');
+}
+
+// ─── LEAD SOURCE ─────────────────────────────────────────────────────────────
+function bLS(){
+  kill('cLS');
+  const a=agg(),ds=gDl();
+  const lsA={};
+  const getV=v=>lsM==='sales'?v.s:lsM==='amount'?v.a:v.g;
+  ds.forEach(d=>{if(!a[d])return;Object.entries(a[d].ls).forEach(([k,v])=>{lsA[k]=(lsA[k]||0)+getV(v);});});
+  const sorted=Object.entries(lsA).filter(x=>x[1]>0).sort((x,y)=>y[1]-x[1]);
+  const labels=sorted.map(x=>x[0].length>36?x[0].slice(0,34)+'…':x[0]),vals=sorted.map(x=>x[1]);
+  const h=Math.max(260,labels.length*26+60);
+  document.getElementById('lswrap').style.height=h+'px';
+  CH.cLS=new Chart(document.getElementById('cLS'),{
+    type:'bar',
+    data:{labels,datasets:[{data:vals,backgroundColor:vals.map((_,i)=>`hsla(${200+i*8},65%,58%,0.85)`),borderWidth:0,borderRadius:3}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>lsM==='sales'?fN(c.raw)+' ventas':fK(c.raw)}}},
+      scales:{x:{ticks:{color:'#8892a4',callback:v=>lsM==='sales'?fN(v):fK(v)},grid:{color:'rgba(255,255,255,.06)'}},
+              y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}}}}
+  });
+}
+
+// ─── SALE AMOUNT POR LEAD TYPE ────────────────────────────────────────────────
+function bSA(){
+  kill('cSA');
+  const a=agg(),fr=gFR();
+  const ltA={};
+  fr.forEach(d=>{if(!a[d])return;Object.entries(a[d].lt).forEach(([k,v])=>{if(!ltA[k])ltA[k]={s:0,a:0};ltA[k].s+=v.s;ltA[k].a+=v.a;});});
+  const sorted=Object.entries(ltA).sort((x,y)=>y[1].a-x[1].a);
+  const labels=sorted.map(x=>x[0]),aVals=sorted.map(x=>x[1].a),sVals=sorted.map(x=>x[1].s);
+  const cols=labels.map(l=>LTCOL[l]||'#4a5468');
+  leg('lsa',labels.map((l,i)=>({c:cols[i],l})));
+  CH.cSA=new Chart(document.getElementById('cSA'),{
+    type:'bar',
+    data:{labels,datasets:[{label:'Sale Amount',data:aVals,backgroundColor:cols.map(c=>c+'cc'),borderColor:cols,borderWidth:1,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`Sale Amount: ${fK(c.raw)}`,afterLabel:c=>`Ventas: ${fN(sVals[c.dataIndex])}`}}},
+      scales:{x:{ticks:{color:'#8892a4'},grid:{display:false}},
+              y:{ticks:{color:'#8892a4',callback:v=>fK(v)},grid:{color:'rgba(255,255,255,.06)'}}}}
+  });
+}
+
+// ─── SALE AMOUNT POR LEAD SOURCE ─────────────────────────────────────────────
+function bSAS(){
+  kill('cSAS');
+  const a=agg(),fr=gFR();
+  const lsA={};
+  fr.forEach(d=>{if(!a[d])return;Object.entries(a[d].ls).forEach(([k,v])=>{lsA[k]=(lsA[k]||0)+v.a;});});
+  const sorted=Object.entries(lsA).filter(x=>x[1]>0).sort((x,y)=>y[1]-x[1]).slice(0,15);
+  const labels=sorted.map(x=>x[0].length>30?x[0].slice(0,28)+'…':x[0]),vals=sorted.map(x=>x[1]);
+  const h=Math.max(220,labels.length*26+60);
+  document.getElementById('saswrap').style.height=h+'px';
+  CH.cSAS=new Chart(document.getElementById('cSAS'),{
+    type:'bar',
+    data:{labels,datasets:[{data:vals,backgroundColor:vals.map((_,i)=>`hsla(${160+i*10},65%,55%,0.85)`),borderWidth:0,borderRadius:3}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'Sale Amount: '+fK(c.raw)}}},
+      scales:{x:{ticks:{color:'#8892a4',callback:v=>fK(v)},grid:{color:'rgba(255,255,255,.06)'}},
+              y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}}}}
+  });
+}
+
+// ─── TENDENCIA LEAD TYPE ──────────────────────────────────────────────────────
+function bLTT(){
+  kill('cLTT');
+  const ms=gMo(),ds=gDl();
+  const ltKeys=new Set();
+  ms.forEach(m=>ds.forEach(d=>{const r=D.monthly[m]&&D.monthly[m][d];if(r)r.lt.forEach(t=>ltKeys.add(t.k));}));
+  const keys=[...ltKeys].filter(k=>k!=='No Lead Type'&&k!=='Appraisal'&&k!=='Parts'&&k!=='Lease Retention');
+  keys.push(...[...ltKeys].filter(k=>['No Lead Type','Appraisal','Parts','Lease Retention'].includes(k)));
+  const datasets=keys.map(k=>({
+    label:k,
+    data:ms.map(m=>ds.reduce((x,d)=>{const r=D.monthly[m]&&D.monthly[m][d];if(!r)return x;const t=r.lt.find(t=>t.k===k);return x+(t?t.s:0);},0)),
+    borderColor:LTCOL[k]||'#4a5468',backgroundColor:(LTCOL[k]||'#4a5468')+'22',
+    borderWidth:2,pointRadius:4,pointBackgroundColor:LTCOL[k]||'#4a5468',tension:.3,fill:false
+  }));
+  leg('ltend',keys.map(k=>({c:LTCOL[k]||'#4a5468',l:k})));
+  CH.cLTT=new Chart(document.getElementById('cLTT'),{
+    type:'line',
+    data:{labels:ms.map(m=>MN[m]),datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:c=>c.dataset.label+': '+fN(c.raw)+' ventas'}}},
+      scales:{x:{ticks:{autoSkip:false,color:'#8892a4'},grid:{color:'rgba(255,255,255,.04)'}},
+              y:{ticks:{color:'#8892a4',callback:v=>fN(v)},grid:{color:'rgba(255,255,255,.06)'}}}}
+  });
+}
+
+// ─── GROSS POR MES ────────────────────────────────────────────────────────────
+function bGross(){
+  kill('cG');
+  const ms=gMo(),fr=gFR();
+  if(!fr.length){leg('lgross',[]);return;}
+  leg('lgross',fr.map(d=>({c:DC[d],l:d})));
+  CH.cG=new Chart(document.getElementById('cG'),{
+    type:gmM,
+    data:{labels:ms.map(m=>MN[m]),datasets:fr.map(d=>({
+      label:d,
+      data:ms.map(m=>{const x=D.monthly[m]&&D.monthly[m][d];if(!x)return 0;if(sLT==='all')return x.total_gross||0;const t=x.lt.find(t=>t.k===sLT);return t?t.g:0;}),
+      backgroundColor:gmM==='bar'?DC[d]+'bb':DC[d]+'22',borderColor:DC[d],borderWidth:2,
+      pointRadius:4,pointBackgroundColor:DC[d],tension:.3,fill:false,borderRadius:gmM==='bar'?3:0
+    }))},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fK(c.raw)}}},
+      scales:{x:{ticks:{autoSkip:false,color:'#8892a4'},grid:{color:'rgba(255,255,255,.04)'}},
+              y:{ticks:{color:'#8892a4',callback:v=>fK(v)},grid:{color:'rgba(255,255,255,.06)'}}}}
+  });
+}
+
+// ─── AVG GROSS ────────────────────────────────────────────────────────────────
+function bAvg(){
+  kill('cAVG');
+  const ms=gMo(),fr=gFR();
+  if(!fr.length){leg('lavg',[]);return;}
+  leg('lavg',fr.map(d=>({c:DC[d],l:d})));
+  CH.cAVG=new Chart(document.getElementById('cAVG'),{
+    type:'line',
+    data:{labels:ms.map(m=>MN[m]),datasets:fr.map(d=>({
+      label:d,
+      data:ms.map(m=>{const x=D.monthly[m]&&D.monthly[m][d];if(!x)return null;let g=0,s=0;if(sLT==='all'){g=x.total_gross||0;s=x.total_sales;}else{const t=x.lt.find(t=>t.k===sLT);if(t){g=t.g;s=t.s;}}return s>0?Math.round(g/s):null;}),
+      borderColor:DC[d],backgroundColor:DC[d]+'22',borderWidth:2,pointRadius:4,pointBackgroundColor:DC[d],tension:.3,fill:false,spanGaps:true
+    }))},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fC(c.raw)}}},
+      scales:{x:{ticks:{autoSkip:false,color:'#8892a4'},grid:{color:'rgba(255,255,255,.04)'}},
+              y:{ticks:{color:'#8892a4',callback:v=>fC(v)},grid:{color:'rgba(255,255,255,.06)'}}}}
+  });
+}
+
+// ─── F&I ─────────────────────────────────────────────────────────────────────
+function bFI(){
+  kill('cFI');
+  const a=agg(),fr=gFR();
+  if(!fr.length){leg('lfi',[]);return;}
+  leg('lfi',[{c:'#4e9de0',l:'Front End'},{c:'#2ecc8f',l:'F&I'}]);
+  CH.cFI=new Chart(document.getElementById('cFI'),{
+    type:'bar',
+    data:{labels:fr,datasets:[
+      {label:'Front End',data:fr.map(d=>a[d]?Math.round(a[d].fe):0),backgroundColor:'#4e9de0bb',borderColor:'#4e9de0',borderWidth:1,borderRadius:3},
+      {label:'F&I',data:fr.map(d=>a[d]?Math.round(a[d].fi):0),backgroundColor:'#2ecc8fbb',borderColor:'#2ecc8f',borderWidth:1,borderRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fK(c.raw)}}},
+      scales:{x:{ticks:{color:'#8892a4'},grid:{display:false}},y:{ticks:{color:'#8892a4',callback:v=>fK(v)},grid:{color:'rgba(255,255,255,.06)'}}}}
+  });
+}
+
+// ─── NUEVO / USADO ────────────────────────────────────────────────────────────
+function bNU(){
+  const a=agg(),fr=gFR();
+  document.getElementById('nubars').innerHTML=fr.map(d=>{
+    if(!a[d])return'';
+    const nu=a[d].nu;const n=nu.N?nu.N.s:0,u=nu.U?nu.U.s:0,tot=n+u||1;
+    const na=nu.N?nu.N.a:0,ua=nu.U?nu.U.a:0;
+    const np=(n/tot*100).toFixed(0),up=(u/tot*100).toFixed(0);
+    return`<div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:11px;font-weight:600;color:${DC[d]}">${d}</span>
+        <span style="font-size:10px;color:#8892a4">${fN(n)} N · ${fN(u)} U</span>
+      </div>
+      <div class="nubar">
+        <div style="width:${np}%;background:#4e9de0;border-radius:3px 0 0 3px;height:7px"></div>
+        <div style="width:${up}%;background:#f5923a;border-radius:0 3px 3px 0;height:7px"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:#4a5468;margin-top:2px">
+        <span>Nuevo ${np}% (${fK(na)})</span><span>Usado ${up}% (${fK(ua)})</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── STATUS NT ────────────────────────────────────────────────────────────────
+function bStatus(){
+  const ms=gMo(),ds=gDl().filter(d=>['Nissan','Toyota'].includes(d));
+  const res={};
+  ms.forEach(m=>ds.forEach(d=>{
+    const r=D.monthly[m]&&D.monthly[m][d];if(!r)return;
+    if(!res[d])res[d]={sold:0,total:0};
+    res[d].sold+=r.total_sales;
+  }));
+  // get total leads (all statuses) for conversion
+  
+  document.getElementById('statusbox').innerHTML=ds.map(d=>{
+    if(!res[d])return'';
+    const {sold}=res[d];
+    return`<div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:11px;font-weight:600;color:${DC[d]}">${d}</span>
+        <span style="font-size:10px;color:#8892a4">Sold/Delivered</span>
+      </div>
+      <div class="smini">
+        <div class="sminibox" style="background:rgba(46,204,143,.1)"><div class="v" style="color:#2ecc8f">${fN(sold)}</div><div class="l">Ventas</div></div>
+        <div class="sminibox" style="background:rgba(78,157,224,.08)"><div class="v" style="color:#4e9de0">${d==='Nissan'?'6%':'10%'}</div><div class="l">Conv. aprox.</div></div>
+        <div class="sminibox" style="background:rgba(245,200,66,.07)"><div class="v" style="color:#f5c842">${d==='Toyota'?'A. Outbound':'Outbound'}</div><div class="l">Lead #1</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── SALESPEOPLE ─────────────────────────────────────────────────────────────
+function bSP(){
+  const ms=gMo(),ds=gDl();
+  const allDs=ds.filter(d=>FR.includes(d));
+  const spA={};
+  ms.forEach(m=>allDs.forEach(d=>{
+    const r=D.monthly[m]&&D.monthly[m][d];if(!r)return;
+    r.sp.forEach(p=>{
+      if(!p.name||p.name==='No Salesperson Assigned')return;
+      const key=d+'::'+p.name;
+      if(!spA[key])spA[key]={dealer:d,name:p.name,s:0,a:0,g:0};
+      spA[key].s+=p.s;spA[key].a+=p.a;spA[key].g+=p.g;
+    });
+  }));
+  let sp=Object.values(spA).map(x=>({...x,avg:x.s>0?x.g/x.s:0}));
+  sp.sort((x,y)=>spS==='s'?y.s-x.s:y[spS]-x[spS]);
+  const cls=d=>d.replace(/ /g,'');
+  document.getElementById('spbody').innerHTML=sp.slice(0,25).map((p,i)=>{
+    const bCls=i===0?'g':i===1?'s':i===2?'b':'';
+    return`<tr>
+      <td style="text-align:center"><span class="badge ${bCls}">${i+1}</span></td>
+      <td style="font-weight:500">${p.name}</td>
+      <td style="text-align:center"><span class="dc ${cls(p.dealer)}">${p.dealer}</span></td>
+      <td class="mono" style="text-align:center">${fN(p.s)}</td>
+      <td class="mono" style="text-align:center">${fK(p.a)}</td>
+      <td class="mono" style="text-align:center">${fK(p.g)}</td>
+      <td class="mono" style="text-align:center">${fK(p.avg)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── RECS ─────────────────────────────────────────────────────────────────────
+function bRecs(){
+  const recs=[
+    {c:'#4e9de0',h:'📊 Outbound genera más ventas que Inbound','b':'En los 5 dealers, Outbound (307 ventas FR + dominante en Nissan/Toyota) supera a Inbound. El equipo de BDC es el mayor generador de cierres. Invertir en capacitación outbound tiene alto ROI.'},
+    {c:'#2ecc8f',h:'💰 Publicidad Vendedor = canal #1 en revenue FR','b':'Con 273 ventas y $12.7M en Sale Amount, Publicidad Vendedor es la fuente más valiosa en los dealers FR. Significa que los vendedores están prospectando activamente — hay que medir y escalar ese comportamiento.'},
+    {c:'#f5923a',h:'📱 Facebook lidera entre fuentes digitales','b':'Facebook (140 ventas FR + 55 Nissan + 347+ Toyota) es el canal digital #1 en todos los dealers. Aumentar el presupuesto de Meta Ads y mejorar el proceso de respuesta a leads puede escalar resultados significativamente.'},
+    {c:'#c97ee8',h:'⚠️ 16% de ventas FR sin fuente registrada','b':'158 ventas (No Lead Source) no tienen fuente asignada. Esto impide medir el ROI real de cada canal. Hacer el campo Lead Source obligatorio en el CRM al crear el prospect.'},
+    {c:'#f5c842',h:'🏆 Toyota convierte 2x más que Nissan','b':'Toyota logra ~10% de conversión (1,336 ventas de ~12,519 prospectos) vs ~6.6% de Nissan (287/4,314). Analizar el proceso de seguimiento y script de BDC de Toyota para aplicarlo en Nissan.'},
+    {c:'#e05c5c',h:'📉 Nissan cayó a 37 ventas en abril','b':'De 83 ventas en marzo a 37 en abril — caída del 55%. Es el mes más bajo del período. Revisar cambios en inventario, campañas digitales o equipo de ventas activo durante ese mes.'}
+  ];
+  document.getElementById('recs').innerHTML=recs.map(r=>`<div class="ncard" style="border-color:${r.c}"><div class="nhead">${r.h}</div><div class="nbody">${r.b}</div></div>`).join('');
+}
+
+// ─── RENDER ALL ───────────────────────────────────────────────────────────────
+function bDays(){
+  const ltData=DAYS.lt;
+  const ltKeys=Object.keys(ltData).filter(k=>ltData[k].c>=5).sort((a,b)=>ltData[a].avg-ltData[b].avg);
+  const ltMax=ltKeys.length?Math.max(...ltKeys.map(k=>ltData[k].avg)):1;
+  const LTCOLS2={'Inbound':'#4e9de0','Outbound':'#2ecc8f','Internet':'#c97ee8','Showroom':'#f5c842','Service':'#f5923a','No Lead Type':'#4a5468','Appraisal':'#e05c5c'};
+  document.getElementById('days-lt-bars').innerHTML=ltKeys.map(k=>{
+    const c=LTCOLS2[k]||'#8892a4';
+    return`<div class="brow"><div class="bmeta"><span style="color:${c};font-weight:600;font-size:10px">${k}</span><span>${ltData[k].avg}d · ${ltData[k].c} deals</span></div><div class="btrack"><div class="bfill" style="width:${(ltData[k].avg/ltMax*100).toFixed(1)}%;background:${c}"></div></div></div>`;
+  }).join('');
+  const lsData=DAYS.ls;
+  const lsKeys=Object.keys(lsData).filter(k=>lsData[k].c>=5).sort((a,b)=>lsData[b].c-lsData[a].c).slice(0,12).sort((a,b)=>lsData[a].avg-lsData[b].avg);
+  const lsMax=lsKeys.length?Math.max(...lsKeys.map(k=>lsData[k].avg)):1;
+  document.getElementById('days-ls-bars').innerHTML=lsKeys.map(k=>{
+    return`<div class="brow"><div class="bmeta"><span style="font-size:10px;color:var(--t2)">${k}</span><span>${lsData[k].avg}d · ${lsData[k].c} deals</span></div><div class="btrack"><div class="bfill" style="width:${(lsData[k].avg/lsMax*100).toFixed(1)}%;background:#4e9de0"></div></div></div>`;
+  }).join('');
+}
+
+function render(){
+  bKPI();bVol();bLT();bLS();bSA();bSAS();bLTT();bGross();bAvg();bFI();bNU();bStatus();bSP();bDays();bRecs();
+  bNTTrend();bNTLSC();updateVis();
+}
+
+// ─── FILTER HANDLERS ──────────────────────────────────────────────────────────
+function F(type,val,btn){
+  if(type==='m'){sM=val;document.querySelectorAll('#mp .pill').forEach(p=>p.classList.remove('on'));}
+  else if(type==='d'){sD=val;document.querySelectorAll('#dp .pill').forEach(p=>p.classList.remove('on'));}
+  else if(type==='lt'){sLT=val;document.querySelectorAll('#ltp .pill').forEach(p=>p.classList.remove('on'));}
+  btn.classList.add('on');
+  render();
+}
+// setVM removed
+function setLT(m,btn){ltM=m;document.querySelectorAll('.tb').forEach(b=>{if(['Ventas','Sale Amount $','Gross $'].includes(b.textContent))b.classList.remove('on');});btn.classList.add('on');bLT();}
+function setLS(m,btn){lsM=m;document.querySelectorAll('.tb').forEach(b=>{if(['Ventas','Sale Amount','Gross $'].includes(b.textContent))b.classList.remove('on');});btn.classList.add('on');bLS();}
+function setGM(m,btn){gmM=m;document.querySelectorAll('.tb').forEach(b=>{if(['Línea','Barra'].includes(b.textContent))b.classList.remove('on');});btn.classList.add('on');bGross();}
+function setSP(m,btn){spS=m;document.querySelectorAll('.tb').forEach(b=>{if(['Gross','Sale Amount','Ventas','Avg/deal'].includes(b.textContent))b.classList.remove('on');});btn.classList.add('on');bSP();}
+
+// ─── VISIBILITY CONTROL ──────────────────────────────────────────────────────
+function updateVis(){
+  const ds=gDl();
+  const onlyNT=ds.length>0&&ds.every(d=>['Nissan','Toyota'].includes(d));
+  const hasNT=ds.some(d=>['Nissan','Toyota'].includes(d));
+  const hasFR=ds.some(d=>FR.includes(d));
+  // FR-only cards: hide when only NT selected
+  document.querySelectorAll('[data-fr-only]').forEach(el=>{
+    const card=el.closest('.card,.g2');
+    // walk up to find direct child of .main
+    let node=el;
+    while(node&&node.parentElement&&!node.parentElement.classList.contains('g2')&&!node.parentElement.classList.contains('main')){node=node.parentElement;}
+    const wrapper=el.closest('.card');
+    if(wrapper) wrapper.style.display=onlyNT?'none':'';
+  });
+  // NT section
+  const ntSec=document.getElementById('nt-section');
+  if(ntSec) ntSec.style.display='';
+  // SP note
+  const spNote=document.getElementById('sp-note');
+  if(spNote) spNote.style.display=hasNT?'':'none';
+}
+
+// ─── VENTAS MENSUALES (todos los dealers) ────────────────────────────────────
+function bNTTrend(){
+  kill('cNTTrend');
+  const ms=gMo(),ds=gDl();
+  if(!ds.length)return;
+  leg('lNTTrend',ds.map(d=>({c:DC[d],l:d})));
+  const getSales=(d,m)=>{const x=D.monthly[m]&&D.monthly[m][d];if(!x)return 0;if(sLT==='all')return x.total_sales;const t=x.lt.find(t=>t.k===sLT);return t?t.s:0;};
+  const datasets=ds.map(d=>({
+    label:d,data:ms.map(m=>getSales(d,m)),
+    borderColor:DC[d],backgroundColor:DC[d]+'22',borderWidth:2,
+    pointRadius:4,pointBackgroundColor:DC[d],tension:.3,fill:false
+  }));
+  CH.cNTTrend=new Chart(document.getElementById('cNTTrend'),{
+    type:'line',data:{labels:ms.map(m=>MN[m]),datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.dataset.label+': '+fN(c.raw)+' ventas'}}},
+      scales:{x:{ticks:{autoSkip:false,color:'#8892a4'},grid:{color:'rgba(255,255,255,.04)'}},
+              y:{ticks:{color:'#8892a4',callback:v=>fN(v)},grid:{color:'rgba(255,255,255,.06)'}}}}
+  });
+}
+
+// ─── NT LSC ──────────────────────────────────────────────────────────────────
+function bNTLSC(){
+  kill('cNTLSC');
+  const ms=gMo(),ds=gDl().filter(d=>['Nissan','Toyota'].includes(d));
+  if(!ds.length)return;
+  const lscA={};
+  ms.forEach(m=>ds.forEach(d=>{
+    const r=NT[d]&&NT[d][m];if(!r)return;
+    Object.entries(r.lsc).forEach(([k,v])=>{lscA[k]=(lscA[k]||0)+v;});
+  }));
+  const sorted=Object.entries(lscA).sort((a,b)=>b[1]-a[1]);
+  const labels=sorted.map(x=>x[0]),vals=sorted.map(x=>x[1]);
+  const palette=['#4e9de0','#2ecc8f','#f5923a','#c97ee8','#f5c842','#e05c5c','#6ee7b7','#a78bfa'];
+  const cols=labels.map((_,i)=>palette[i%palette.length]);
+  const total=vals.reduce((a,b)=>a+b,0);
+  leg('lNTLSC',labels.map((l,i)=>({c:cols[i],l:l+' — '+pct(vals[i],total)})));
+  CH.cNTLSC=new Chart(document.getElementById('cNTLSC'),{
+    type:'doughnut',data:{labels,datasets:[{data:vals,backgroundColor:cols,borderWidth:0,hoverBorderWidth:2,hoverBorderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+fN(c.raw)+' ('+pct(c.raw,total)+')'}}}}
+  });
+}
+
+render();
+</script>
+</body>
+</html>
